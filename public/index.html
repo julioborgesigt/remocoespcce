@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistema de Remoção de Servidores</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.bunny.net" />
+  <link href="https://fonts.bunny.net/css?family=dm-sans:400,500,600,700|jetbrains-mono:400,500" rel="stylesheet" />
+
+  <!-- Vuetify CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/vuetify@3.7.6/dist/vuetify.min.css" rel="stylesheet" />
+  <!-- Material Design Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css" rel="stylesheet" />
+
+  <link rel="stylesheet" href="/css/custom.css" />
+</head>
+<body>
+  <div id="app">
+    <v-app>
+      <!-- Loading state -->
+      <v-main v-if="!appReady" class="d-flex align-center justify-center" style="min-height:100vh">
+        <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+      </v-main>
+
+      <!-- App Layout (quando autenticado) -->
+      <template v-else-if="authStore.isLoggedIn">
+        <app-layout></app-layout>
+      </template>
+
+      <!-- Login (quando não autenticado) -->
+      <template v-else>
+        <login-page></login-page>
+      </template>
+    </v-app>
+  </div>
+
+  <!-- Vue 3 -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.13/dist/vue.global.prod.js"></script>
+  <!-- Vue Router -->
+  <script src="https://cdn.jsdelivr.net/npm/vue-router@4.5.0/dist/vue-router.global.prod.js"></script>
+  <!-- Pinia -->
+  <script src="https://cdn.jsdelivr.net/npm/pinia@2.3.1/dist/pinia.iife.prod.js"></script>
+  <!-- Vuetify -->
+  <script src="https://cdn.jsdelivr.net/npm/vuetify@3.7.6/dist/vuetify.min.js"></script>
+
+  <!-- Stores -->
+  <script src="/js/stores/auth.js"></script>
+  <script src="/js/stores/cidades.js"></script>
+  <script src="/js/stores/servidores.js"></script>
+  <script src="/js/stores/processamento.js"></script>
+
+  <!-- Views -->
+  <script src="/js/views/Login.js"></script>
+  <script src="/js/views/admin/Dashboard.js"></script>
+  <script src="/js/views/admin/Cidades.js"></script>
+  <script src="/js/views/admin/Servidores.js"></script>
+  <script src="/js/views/admin/Processamento.js"></script>
+  <script src="/js/views/usuario/Perfil.js"></script>
+  <script src="/js/views/usuario/Intencao.js"></script>
+
+  <!-- Components -->
+  <script src="/js/components/AppLayout.js"></script>
+
+  <!-- App -->
+  <script src="/js/router.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
