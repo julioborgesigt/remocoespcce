@@ -43,8 +43,23 @@ async function processarRemocao() {
       vagas.set(cidade.id, cidade.vagas_iniciais);
     }
 
+    // Filtrar pedidos inválidos (onde todas opções são a própria cidade de origem)
+    // Isso evita processamento desnecessário e "ruído" nos dados.
+    const pedidosValidos = pedidos.filter(p => {
+      const origem = p.servidor.cidade_lotacao_id;
+      const opcoes = [p.opcao1_cidade_id, p.opcao2_cidade_id, p.opcao3_cidade_id].filter(Boolean);
+
+      // Se não tem opções ou todas as opções são iguais à origem
+      const temOpcaoValida = opcoes.some(dest => dest !== origem);
+
+      if (!temOpcaoValida && opcoes.length > 0) {
+        console.warn(`[ALERTA] Pedido ${p.id} (Matrícula: ${p.servidor.matricula}) ignorado: Todas as opções são para a própria lotação (${origem}).`);
+      }
+      return temOpcaoValida;
+    });
+
     // Ordenar pedidos por antiguidade (menor data = mais antigo = prioridade)
-    const pedidosOrdenados = [...pedidos].sort((a, b) => {
+    const pedidosOrdenados = [...pedidosValidos].sort((a, b) => {
       const dataA = new Date(a.servidor.data_ingresso);
       const dataB = new Date(b.servidor.data_ingresso);
       if (dataA.getTime() !== dataB.getTime()) return dataA - dataB;
@@ -96,9 +111,16 @@ async function processarRemocao() {
             status.observacao = `Alocação direta (${i + 1}ª opção, iteração ${iteracao})`;
 
             houveAlteracao = true;
+
+            // IMPORTANTE: Se alocamos uma vaga, devemos reiniciar a iteração desde o início da lista de pedidos.
+            // Isso garante que um servidor MAIS ANTIGO, que foi pulado anteriormente por falta de vaga,
+            // tenha prioridade sobre servidores mais novos caso a vaga que abriu seja a que ele queria.
             break;
           }
         }
+
+        // Se houve alteração (alocação), sai do loop de pedidos para reiniciar o while (voltar ao topo da lista)
+        if (houveAlteracao) break;
       }
     }
 
@@ -218,9 +240,12 @@ async function processarRemocao() {
                 status.cidadeDestino = cidadeDestinoId;
                 status.observacao = `Alocação pós-permuta (${i + 1}ª opção)`;
                 houveNova = true;
+
+                // Reiniciar do início se alocou
                 break;
               }
             }
+            if (houveNova) break;
           }
         }
       }
@@ -241,10 +266,14 @@ async function processarRemocao() {
           observacao: status.observacao
         }, { transaction });
 
-        // Atualizar lotação do servidor
+        // ATENÇÃO: NÃO atualizamos a lotação do servidor aqui.
+        // O processamento serve para indicar o STATUS atual do pedido (se seria atendido ou não).
+        // A efetivação da mudança deve ser um passo administrativo posterior (homologação).
+        /*
         await pedido.servidor.update({
           cidade_lotacao_id: status.cidadeDestino
         }, { transaction });
+        */
 
         movimentacoes.push({
           servidor: pedido.servidor.nome,

@@ -7,6 +7,21 @@ const { processarRemocao } = require('../services/algoritmoRemocao');
 router.post('/executar', autenticar, apenasAdmin, async (_req, res) => {
   try {
     const resultado = await processarRemocao();
+
+    // Atualizar data do último processamento
+    const { Configuracao } = require('../models');
+    let config = await Configuracao.findOne({ where: { chave: 'ultimo_processamento' } });
+    if (config) {
+      config.valor_data = new Date();
+      await config.save();
+    } else {
+      await Configuracao.create({
+        chave: 'ultimo_processamento',
+        valor_data: new Date(),
+        descricao: 'Data da última execução da lógica de remoção.'
+      });
+    }
+
     res.json(resultado);
   } catch (err) {
     console.error('Erro no processamento:', err);
@@ -61,6 +76,9 @@ router.get('/dashboard', autenticar, apenasAdmin, async (_req, res) => {
       order: [['nome', 'ASC']]
     });
 
+    const { Configuracao } = require('../models');
+    const configUltimo = await Configuracao.findOne({ where: { chave: 'ultimo_processamento' } });
+
     const vagasPorCidade = cidades.map(c => ({
       id: c.id,
       nome: c.nome,
@@ -79,7 +97,8 @@ router.get('/dashboard', autenticar, apenasAdmin, async (_req, res) => {
       },
       ultimosAtendidos,
       ultimosNaoAtendidos,
-      vagasPorCidade
+      vagasPorCidade,
+      ultimoProcessamento: configUltimo ? configUltimo.valor_data : null
     });
   } catch (err) {
     console.error('Erro no dashboard:', err);

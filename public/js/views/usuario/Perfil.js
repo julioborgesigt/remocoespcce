@@ -48,13 +48,26 @@ const UsuarioPerfil = {
           <div class="text-caption text-medium-emphasis text-uppercase mb-2" style="letter-spacing:1px">
             Status do Pedido de Remoção
           </div>
+          
+          <!-- Se o prazo NÃO encerrou, mostra status genérico de "Em andamento" -->
           <v-alert
+            v-if="!configStore.prazoEncerrado"
+            type="info"
+            variant="tonal"
+            density="compact"
+          >
+            Em andamento, consulte a aba "pedido de remoção" para mais detalhes.
+          </v-alert>
+
+          <!-- Se o prazo encerrou, mostra o resultado final -->
+          <v-alert
+            v-else
             :type="pedidoAlertType"
             variant="tonal"
             density="compact"
           >
             <template v-if="srvStore.meuPedido.status === 'pendente'">
-              Seu pedido está <strong>pendente</strong> de processamento.
+              Seu pedido está <strong>pendente</strong> de processamento final.
             </template>
             <template v-else-if="srvStore.meuPedido.status === 'atendido'">
               Seu pedido foi <strong>atendido</strong>!
@@ -70,34 +83,49 @@ const UsuarioPerfil = {
   `,
 
   setup() {
+    const configStore = useConfigStore();
     const authStore = useAuthStore();
     const srvStore = useServidoresStore();
+
+    Vue.onMounted(async () => {
+      await Promise.all([
+        srvStore.carregarMeuPedido(),
+        configStore.fetchConfig()
+      ]);
+    });
+
     const user = Vue.computed(() => authStore.usuario);
 
-    Vue.onMounted(() => srvStore.carregarMeuPedido());
+    // ... (formatDate e calcAntiguidade mantidos)
 
     function formatDate(d) {
       if (!d) return '-';
-      return new Date(d + 'T00:00:00').toLocaleDateString('pt-BR');
+      const parts = d.split('-');
+      if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      return d;
     }
 
     function calcAntiguidade() {
-      if (!user.value?.dataIngresso) return '-';
-      const ingresso = new Date(user.value.dataIngresso + 'T00:00:00');
+      if (!user.value?.data_ingresso) return '-';
+      const ingresso = new Date(user.value.data_ingresso);
+      if (isNaN(ingresso.getTime())) return '-';
+
       const agora = new Date();
-      const anos = agora.getFullYear() - ingresso.getFullYear();
-      const meses = agora.getMonth() - ingresso.getMonth();
-      const totalMeses = anos * 12 + meses;
-      const a = Math.floor(totalMeses / 12);
-      const m = totalMeses % 12;
-      return `${a} ano(s) e ${m} mês(es)`;
+      let anos = agora.getFullYear() - ingresso.getFullYear();
+      let meses = agora.getMonth() - ingresso.getMonth();
+      if (meses < 0) {
+        anos--;
+        meses += 12;
+      }
+      return `${anos} ano(s) e ${meses} mês(es)`;
     }
 
     const pedidoAlertType = Vue.computed(() => {
+      if (!configStore.prazoEncerrado) return 'info'; // Sempre azul enquanto aberto
       const s = srvStore.meuPedido?.status;
       return { pendente: 'warning', atendido: 'success', nao_atendido: 'error' }[s] || 'info';
     });
 
-    return { user, srvStore, formatDate, calcAntiguidade, pedidoAlertType };
+    return { user, srvStore, configStore, formatDate, calcAntiguidade, pedidoAlertType };
   }
 };

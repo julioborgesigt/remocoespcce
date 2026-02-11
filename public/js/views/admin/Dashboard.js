@@ -5,7 +5,42 @@ const AdminDashboard = {
       <h1 class="text-h5 font-weight-bold mb-1">Dashboard</h1>
       <p class="text-body-2 text-medium-emphasis mb-6">Visão geral do sistema de remoção</p>
 
+      <!-- Configurações Rápidas -->
+      <v-card class="mb-6 pa-4" variant="outlined" color="primary">
+        <div class="d-flex align-center justify-space-between flex-wrap">
+          <div>
+            <div class="text-subtitle-1 font-weight-bold">
+              <v-icon icon="mdi-calendar-clock" class="mr-2"></v-icon>
+              Data Limite para Pedidos
+            </div>
+            <div class="text-body-2 mt-1">
+              Atualmente: <strong>{{ configStore.dataFormatada }}</strong>
+              <span v-if="configStore.prazoEncerrado" class="text-error ml-2 font-weight-bold">(Encerrado)</span>
+              <span v-else class="text-success ml-2 font-weight-bold">(Aberto)</span>
+            </div>
+          </div>
+          <div class="d-flex align-center mt-2 mt-sm-0" style="gap: 10px">
+            <input type="datetime-local" class="custom-date-input" v-model="novaData" />
+            <v-btn 
+                color="primary" 
+                variant="flat" 
+                size="small" 
+                :loading="configStore.loading"
+                :disabled="!novaData"
+                @click="atualizarData"
+            >
+              Atualizar Prazo
+            </v-btn>
+          </div>
+        </div>
+      </v-card>
+
       <v-progress-linear v-if="store.carregando" indeterminate color="primary" class="mb-4"></v-progress-linear>
+
+      <!-- Snackbar -->
+      <v-snackbar v-model="snackbar" :color="snackbarColor" timeout="3000">
+        {{ snackbarText }}
+      </v-snackbar>
 
       <template v-if="store.dashboard">
         <!-- Stats Cards -->
@@ -111,6 +146,12 @@ const AdminDashboard = {
 
   setup() {
     const store = useProcessamentoStore();
+    const configStore = useConfigStore();
+
+    const novaData = Vue.ref('');
+    const snackbar = Vue.ref(false);
+    const snackbarColor = Vue.ref('success');
+    const snackbarText = Vue.ref('');
 
     const stats = Vue.computed(() => {
       if (!store.dashboard) return [];
@@ -123,8 +164,26 @@ const AdminDashboard = {
       ];
     });
 
-    Vue.onMounted(() => store.carregarDashboard());
+    const atualizarData = async () => {
+      if (!novaData.value) return;
+      try {
+        await configStore.updateDataLimite(novaData.value);
+        snackbarText.value = 'Data limite atualizada com sucesso!';
+        snackbarColor.value = 'success';
+        snackbar.value = true;
+        novaData.value = '';
+      } catch (err) {
+        snackbarText.value = 'Erro ao atualizar: ' + err.message;
+        snackbarColor.value = 'error';
+        snackbar.value = true;
+      }
+    };
 
-    return { store, stats };
+    Vue.onMounted(() => {
+      store.carregarDashboard();
+      configStore.fetchConfig();
+    });
+
+    return { store, configStore, stats, novaData, atualizarData, snackbar, snackbarColor, snackbarText };
   }
 };

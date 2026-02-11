@@ -112,3 +112,20 @@ body {
   background: rgba(0, 0, 0, 0.15);
   border-radius: 3px;
 }
+
+/* ── Inputs ────────────────────────────────────────────── */
+.custom-date-input {
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 0.875rem;
+  transition: border-color 0.2s;
+  background-color: white;
+  min-width: 200px;
+}
+
+.custom-date-input:focus {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  border-color: transparent;
+}

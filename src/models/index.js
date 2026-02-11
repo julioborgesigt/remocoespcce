@@ -4,6 +4,7 @@ const sequelize = require('../config/database');
 const Cidade = require('./Cidade')(sequelize);
 const Servidor = require('./Servidor')(sequelize);
 const PedidoRemocao = require('./PedidoRemocao')(sequelize);
+const Configuracao = require('./Configuracao')(sequelize);
 
 // ── Associações ────────────────────────────────────────────
 
@@ -37,5 +38,6 @@ module.exports = {
   sequelize,
   Cidade,
   Servidor,
-  PedidoRemocao
+  PedidoRemocao,
+  Configuracao
 };

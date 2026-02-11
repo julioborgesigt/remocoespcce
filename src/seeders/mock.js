@@ -22,20 +22,22 @@ async function seed() {
     console.log('✅ Tabelas recriadas.');
 
     // ── Admin padrão ──────────────────────────────────────
-    const senhaAdmin = await bcrypt.hash(process.env.ADMIN_SENHA || 'admin123', 12);
+    const adminMatricula = process.env.ADMIN_MATRICULA || 'ADMIN001';
+    const adminSenhaVal = process.env.ADMIN_SENHA || 'admin123';
+    const senhaAdmin = await bcrypt.hash(adminSenhaVal, 12);
 
     // Criar cidade para o admin
     const cidadeAdmin = await Cidade.create({ nome: 'Sede Administrativa', vagas_iniciais: 0 });
 
     await Servidor.create({
-      matricula: process.env.ADMIN_MATRICULA || 'ADMIN001',
+      matricula: adminMatricula,
       nome: 'Administrador do Sistema',
       senha_hash: senhaAdmin,
       data_ingresso: '2000-01-01',
       cidade_lotacao_id: cidadeAdmin.id,
       perfil: 'admin'
     });
-    console.log('✅ Admin criado (matrícula: ADMIN001, senha: admin123)');
+    console.log(`✅ Admin criado: Usuário [${adminMatricula}] / Senha [${adminSenhaVal}]`);
 
     if (!isTest) {
       console.log('\n🏁 Seed básico concluído. Use --test para cenário completo.');

@@ -63,6 +63,15 @@ router.post('/pedido', autenticar, [
       return res.status(400).json({ errors: errors.array() });
     }
 
+    // Verificar Data Limite
+    const { Configuracao } = require('../models');
+    const config = await Configuracao.findOne({ where: { chave: 'data_limite_pedidos' } });
+    if (config && config.valor_data) {
+      if (new Date() > new Date(config.valor_data)) {
+        return res.status(403).json({ error: 'O prazo para envio ou edição de pedidos já encerrou.' });
+      }
+    }
+
     const { opcao1_cidade_id, opcao2_cidade_id, opcao3_cidade_id } = req.body;
 
     // Buscar servidor com cidade atual
@@ -97,17 +106,21 @@ router.post('/pedido', autenticar, [
     });
 
     if (pedido) {
-      // Só pode editar se pendente
-      if (pedido.status !== 'pendente') {
-        return res.status(400).json({
-          error: `Pedido já foi processado (status: ${pedido.status}). Não é possível alterar.`
-        });
-      }
+      // Se já existe pedido, verificamos se podemos alterar.
+      // O frontend já checa a 'data limite', e aqui também checamos 'data_limite_pedidos' linhas acima.
+      // Portanto, se a data limite não passou, DEVE ser permitido alterar, INDEPENDENTE do status atual (atendido/não atendido).
+      // Isso permite que o usuário mude de ideia mesmo se a "prévia" do algoritmo já o atendeu.
 
       await pedido.update({
         opcao1_cidade_id,
         opcao2_cidade_id: opcao2_cidade_id || null,
-        opcao3_cidade_id: opcao3_cidade_id || null
+        opcao3_cidade_id: opcao3_cidade_id || null,
+        // Ao alterar o pedido, resetamos o status para 'pendente' para garantir que ele entre novamente na fila de processamento limpo
+        // ou mantemos o status, mas o próximo processamento irá sobrescrevê-lo de qualquer forma.
+        // O ideal é resetar para 'pendente' visualmente para indicar que foi modificado e aguarda nova análise.
+        status: 'pendente',
+        cidade_destino_final_id: null,
+        observacao: 'Pedido alterado pelo servidor. Aguardando novo processamento.'
       });
     } else {
       pedido = await PedidoRemocao.create({
@@ -146,9 +159,17 @@ router.delete('/pedido', autenticar, async (req, res) => {
       return res.status(404).json({ error: 'Nenhum pedido encontrado.' });
     }
 
-    if (pedido.status !== 'pendente') {
-      return res.status(400).json({ error: 'Pedido já processado. Não é possível cancelar.' });
+    // Verificar Data Limite antes de cancelar
+    const { Configuracao } = require('../models');
+    const config = await Configuracao.findOne({ where: { chave: 'data_limite_pedidos' } });
+    if (config && config.valor_data) {
+      if (new Date() > new Date(config.valor_data)) {
+        return res.status(403).json({ error: 'O prazo para cancelamento de pedidos já encerrou.' });
+      }
     }
+
+    // Se a data limite não passou, PERMITE cancelar independente do status (atendido/pendente).
+    // if (pedido.status !== 'pendente') { ... } // Removido
 
     await pedido.destroy();
     res.json({ mensagem: 'Pedido cancelado com sucesso.' });

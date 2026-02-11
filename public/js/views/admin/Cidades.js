@@ -56,7 +56,7 @@ const AdminCidades = {
         <v-card rounded="xl" class="pa-2">
           <v-card-title>{{ editando ? 'Editar Cidade' : 'Nova Cidade' }}</v-card-title>
           <v-card-text>
-            <v-form @submit.prevent="salvar" ref="form">
+            <v-form @submit.prevent="salvar" ref="formRef">
               <v-text-field
                 v-model="form.nome"
                 label="Nome da Cidade"
@@ -108,7 +108,7 @@ const AdminCidades = {
 
   setup() {
     const cidadesStore = useCidadesStore();
-    const showSnackbar = Vue.inject('showSnackbar', () => {});
+    const showSnackbar = Vue.inject('showSnackbar', () => { });
 
     const dialog = Vue.ref(false);
     const dialogRemover = Vue.ref(false);

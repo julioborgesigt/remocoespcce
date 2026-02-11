@@ -71,6 +71,7 @@ app.use('/api/auth', require('./src/routes/auth'));
 app.use('/api/cidades', require('./src/routes/cidades'));
 app.use('/api/servidores', require('./src/routes/servidores'));
 app.use('/api/processamento', require('./src/routes/processamento'));
+app.use('/api/config', require('./src/routes/config'));
 
 // ── SPA fallback ───────────────────────────────────────────
 app.get('*', (_req, res) => {

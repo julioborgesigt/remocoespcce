@@ -9,28 +9,54 @@ const UsuarioIntencao = {
 
       <v-progress-linear v-if="loading" indeterminate color="primary" class="mb-4"></v-progress-linear>
 
-      <!-- Pedido já processado -->
+      <!-- Prazo Encerrado -->
       <v-alert
-        v-if="pedido && pedido.status !== 'pendente'"
-        :type="pedido.status === 'atendido' ? 'success' : 'error'"
+        v-if="configStore.prazoEncerrado"
+        type="warning"
+        variant="tonal"
+        class="mb-6"
+        rounded="xl"
+        icon="mdi-clock-alert"
+      >
+        <div class="font-weight-bold">Prazo Encerrado</div>
+        <div>O período para envio ou edição de pedidos encerrou em <strong>{{ configStore.dataFormatada }}</strong>.</div>
+        <div class="text-caption mt-1">Se você já possui um pedido, ele será processado conforme os critérios.</div>
+      </v-alert>
+
+      <!-- Mensagem Informativa sobre o Status Atual -->
+      <v-alert
+        v-if="pedido"
+        :color="pedido.status === 'atendido' ? 'success' : (pedido.status === 'nao_atendido' ? 'warning' : 'info')"
         variant="tonal"
         class="mb-6"
         rounded="xl"
       >
         <template v-if="pedido.status === 'atendido'">
-          <div class="font-weight-bold">Pedido Atendido!</div>
-          <div>Você foi removido para: <strong>{{ pedido.destinoFinal?.nome }}</strong></div>
+          <div class="font-weight-bold">Prévia: Pedido Atendido</div>
+          <div>
+            Com base na última análise, feita em <strong>{{ configStore.ultimoProcessamentoFormatado }}</strong>, 
+            você seria removido para: <strong>{{ pedido.destinoFinal?.nome }}</strong>
+          </div>
           <div class="text-caption mt-1">{{ pedido.observacao }}</div>
+          <div class="text-caption mt-2 font-weight-bold" v-if="!configStore.prazoEncerrado">
+            Você pode alterar seu pedido até a data limite. Isso reiniciará a análise do seu caso.
+          </div>
+        </template>
+        <template v-else-if="pedido.status === 'nao_atendido'">
+          <div class="font-weight-bold">Prévia: Pedido Não Atendido</div>
+          <div>Atualmente não há vagas para suas opções.</div>
+          <div class="text-caption mt-1">Isso pode mudar conforme novos pedidos entram ou saem até a data limite.</div>
         </template>
         <template v-else>
-          <div class="font-weight-bold">Pedido Não Atendido</div>
-          <div>Nenhuma vaga disponível nas opções solicitadas.</div>
+          <div class="font-weight-bold">Pedido Pendente</div>
+          <div>Aguardando próximo processamento.</div>
         </template>
       </v-alert>
 
       <!-- Formulário -->
-      <v-card v-if="!pedido || pedido.status === 'pendente'" rounded="xl" variant="outlined" class="pa-6" max-width="600">
-        <v-form @submit.prevent="salvar" ref="form">
+      <!-- Removemos a restrição v-if="!pedido || pedido.status === 'pendente'" para permitir edição sempre -->
+      <v-card rounded="xl" variant="outlined" class="pa-6" max-width="600">
+        <v-form @submit.prevent="salvar" ref="form" :disabled="configStore.prazoEncerrado">
           <v-alert type="info" variant="tonal" density="compact" class="mb-4" rounded="lg">
             <div class="text-caption">
               Sua cidade atual: <strong>{{ authStore.usuario?.cidadeLotacao?.nome }}</strong>.
@@ -115,18 +141,20 @@ const UsuarioIntencao = {
               rounded="lg"
               prepend-icon="mdi-content-save"
               :loading="salvando"
+              :disabled="configStore.prazoEncerrado"
             >
               {{ pedido ? 'Atualizar Pedido' : 'Enviar Pedido' }}
             </v-btn>
 
             <v-btn
-              v-if="pedido && pedido.status === 'pendente'"
+              v-if="pedido" 
               color="error"
               variant="outlined"
               size="large"
               rounded="lg"
               prepend-icon="mdi-delete"
               @click="dialogCancelar = true"
+              :disabled="configStore.prazoEncerrado"
             >
               Cancelar Pedido
             </v-btn>
@@ -134,16 +162,7 @@ const UsuarioIntencao = {
         </v-form>
       </v-card>
 
-      <!-- Pedido atual (resumo quando pendente) -->
-      <v-card v-if="pedido && pedido.status === 'pendente'" rounded="xl" variant="tonal" color="warning" class="pa-4 mt-4" max-width="600">
-        <div class="text-caption text-uppercase font-weight-bold mb-2" style="letter-spacing:1px">Pedido Atual (Pendente)</div>
-        <div class="text-body-2">
-          1ª opção: <strong>{{ pedido.opcao1?.nome }}</strong>
-          <template v-if="pedido.opcao2"><br/>2ª opção: <strong>{{ pedido.opcao2.nome }}</strong></template>
-          <template v-if="pedido.opcao3"><br/>3ª opção: <strong>{{ pedido.opcao3.nome }}</strong></template>
-        </div>
-      </v-card>
-
+      <!-- (Removido o card de 'Pedido Atual' simples, pois agora o form mostra os dados) -->
       <!-- Dialog Cancelar -->
       <v-dialog v-model="dialogCancelar" max-width="380">
         <v-card rounded="xl" class="pa-2">
@@ -163,7 +182,8 @@ const UsuarioIntencao = {
     const authStore = useAuthStore();
     const cidadesStore = useCidadesStore();
     const srvStore = useServidoresStore();
-    const showSnackbar = Vue.inject('showSnackbar', () => {});
+    const configStore = useConfigStore(); // Novo
+    const showSnackbar = Vue.inject('showSnackbar', () => { });
 
     const loading = Vue.ref(true);
     const salvando = Vue.ref(false);
@@ -180,11 +200,12 @@ const UsuarioIntencao = {
     Vue.onMounted(async () => {
       await Promise.all([
         cidadesStore.carregar(),
-        srvStore.carregarMeuPedido()
+        srvStore.carregarMeuPedido(),
+        configStore.fetchConfig() // Carregar configuração
       ]);
 
-      // Preencher form se já tem pedido pendente
-      if (pedido.value && pedido.value.status === 'pendente') {
+      // Preencher form se já tem pedido (independente do status, pois pode editar até o prazo)
+      if (pedido.value) {
         formData.opcao1 = pedido.value.opcao1_cidade_id;
         formData.opcao2 = pedido.value.opcao2_cidade_id;
         formData.opcao3 = pedido.value.opcao3_cidade_id;
@@ -194,6 +215,7 @@ const UsuarioIntencao = {
     });
 
     async function salvar() {
+      if (configStore.prazoEncerrado) return; // Proteção extra
       if (!formData.opcao1) return;
       salvando.value = true;
       try {
@@ -207,6 +229,7 @@ const UsuarioIntencao = {
     }
 
     async function cancelar() {
+      if (configStore.prazoEncerrado) return; // Proteção extra
       try {
         await srvStore.cancelarPedido();
         formData.opcao1 = null;
@@ -222,7 +245,7 @@ const UsuarioIntencao = {
     return {
       authStore, cidadesDisponiveis, pedido, formData,
       loading, salvando, dialogCancelar,
-      salvar, cancelar
+      salvar, cancelar, configStore // Expor configStore
     };
   }
 };
