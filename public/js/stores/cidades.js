@@ -43,7 +43,7 @@ const useCidadesStore = Pinia.defineStore('cidades', {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erro');
       const idx = this.lista.findIndex(c => c.id === id);
-      if (idx !== -1) this.lista[idx] = { ...this.lista[idx], ...data };
+      if (idx !== -1) this.lista.splice(idx, 1, { ...this.lista[idx], ...data });
       return data;
     },
 
