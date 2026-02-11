@@ -1,5 +1,8 @@
 // Router
 const routes = [
+  // Rota raiz - guard redireciona baseado no perfil
+  { path: '/', name: 'home', redirect: '/perfil' },
+
   // Admin
   { path: '/admin', redirect: '/admin/dashboard' },
   { path: '/admin/dashboard', name: 'admin-dashboard', component: AdminDashboard },
@@ -11,8 +14,8 @@ const routes = [
   { path: '/perfil', name: 'usuario-perfil', component: UsuarioPerfil },
   { path: '/intencao', name: 'usuario-intencao', component: UsuarioIntencao },
 
-  // Catch-all
-  { path: '/:pathMatch(.*)*', redirect: '/' }
+  // Catch-all - redireciona para perfil (guard cuida do redirecionamento por perfil)
+  { path: '/:pathMatch(.*)*', redirect: '/perfil' }
 ];
 
 const router = VueRouter.createRouter({
@@ -27,21 +30,14 @@ router.beforeEach((to) => {
 
   if (!token) return true; // Login page handles this
 
-  // Admin tentando acessar rotas de usuário
+  // Admin tentando acessar rotas de usuário → redireciona para dashboard
   if (usuario?.perfil === 'admin' && !to.path.startsWith('/admin')) {
     return { name: 'admin-dashboard' };
   }
 
-  // Usuário tentando acessar rotas de admin
+  // Usuário tentando acessar rotas de admin → redireciona para perfil
   if (usuario?.perfil === 'usuario' && to.path.startsWith('/admin')) {
     return { name: 'usuario-perfil' };
-  }
-
-  // Rota raiz → redirecionar baseado no perfil
-  if (to.path === '/') {
-    return usuario?.perfil === 'admin'
-      ? { name: 'admin-dashboard' }
-      : { name: 'usuario-perfil' };
   }
 
   return true;
