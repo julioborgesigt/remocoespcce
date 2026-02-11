@@ -18,7 +18,7 @@ const LoginPage = {
           <!-- LOGIN -->
           <v-window v-model="tab">
             <v-window-item value="login">
-              <v-form @submit.prevent="handleLogin" ref="loginForm">
+              <v-form @submit.prevent="handleLogin" ref="loginFormRef">
                 <v-text-field
                   v-model="loginForm.matricula"
                   label="Matrícula"
@@ -62,7 +62,7 @@ const LoginPage = {
 
             <!-- REGISTRO -->
             <v-window-item value="registro">
-              <v-form @submit.prevent="handleRegistro" ref="regForm">
+              <v-form @submit.prevent="handleRegistro" ref="regFormRef">
                 <v-text-field
                   v-model="regForm.matricula"
                   label="Matrícula"
