@@ -32,9 +32,12 @@ module.exports = (sequelize) => {
       allowNull: false,
       validate: {
         isDate: { msg: 'Data de ingresso inválida.' },
-        isBefore: {
-          args: [new Date(Date.now() + 86400000).toISOString().split('T')[0]],
-          msg: 'Data de ingresso não pode ser futura.'
+        naoFutura(value) {
+          const amanha = new Date();
+          amanha.setDate(amanha.getDate() + 1);
+          if (new Date(value) >= amanha) {
+            throw new Error('Data de ingresso não pode ser futura.');
+          }
         }
       }
     },

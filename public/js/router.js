@@ -26,7 +26,13 @@ const router = VueRouter.createRouter({
 // Guard de navegação
 router.beforeEach((to) => {
   const token = localStorage.getItem('token');
-  const usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
+  let usuario = null;
+  try {
+    usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
+  } catch {
+    localStorage.removeItem('usuario');
+    localStorage.removeItem('token');
+  }
 
   if (!token) return true; // Login page handles this
 

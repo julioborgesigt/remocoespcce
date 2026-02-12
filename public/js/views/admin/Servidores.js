@@ -70,6 +70,19 @@ const AdminServidores = {
             </tr>
           </tbody>
         </v-table>
+        <div v-if="store.paginacao.totalPaginas > 1" class="d-flex justify-center pa-4">
+          <v-pagination
+            v-model="paginaAtual"
+            :length="store.paginacao.totalPaginas"
+            :total-visible="5"
+            density="comfortable"
+            rounded="lg"
+            @update:model-value="mudarPagina"
+          ></v-pagination>
+        </div>
+        <div class="text-caption text-medium-emphasis text-center pb-3">
+          {{ store.paginacao.total }} servidor(es) no total
+        </div>
       </v-card>
     </div>
   `,
@@ -77,6 +90,7 @@ const AdminServidores = {
   setup() {
     const store = useServidoresStore();
     const busca = Vue.ref('');
+    const paginaAtual = Vue.ref(1);
 
     Vue.onMounted(() => store.carregarTodos());
 
@@ -88,6 +102,11 @@ const AdminServidores = {
         (s.nome.toLowerCase().includes(q) || s.matricula.toLowerCase().includes(q))
       );
     });
+
+    function mudarPagina(page) {
+      paginaAtual.value = page;
+      store.carregarTodos(page);
+    }
 
     function formatDate(d) {
       if (!d) return '-';
@@ -102,6 +121,6 @@ const AdminServidores = {
       return { pendente: 'Pendente', atendido: 'Atendido', nao_atendido: 'Não Atendido' }[s] || s;
     }
 
-    return { store, busca, filtrados, formatDate, statusColor, statusLabel };
+    return { store, busca, paginaAtual, filtrados, mudarPagina, formatDate, statusColor, statusLabel };
   }
 };

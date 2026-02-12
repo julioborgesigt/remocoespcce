@@ -1,12 +1,16 @@
 const router = require('express').Router();
 const { body, validationResult } = require('express-validator');
-const { Servidor, PedidoRemocao, Cidade } = require('../models');
+const { Servidor, PedidoRemocao, Cidade, Configuracao } = require('../models');
 const { autenticar, apenasAdmin } = require('../middleware/auth');
 
-// GET /api/servidores — lista todos (admin)
-router.get('/', autenticar, apenasAdmin, async (_req, res) => {
+// GET /api/servidores — lista todos (admin) com paginação
+router.get('/', autenticar, apenasAdmin, async (req, res) => {
   try {
-    const servidores = await Servidor.findAll({
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 50));
+    const offset = (page - 1) * limit;
+
+    const { count, rows: servidores } = await Servidor.findAndCountAll({
       attributes: { exclude: ['senha_hash'] },
       include: [
         { model: Cidade, as: 'cidadeLotacao' },
@@ -21,10 +25,21 @@ router.get('/', autenticar, apenasAdmin, async (_req, res) => {
           ]
         }
       ],
-      order: [['data_ingresso', 'ASC']]
+      order: [['data_ingresso', 'ASC']],
+      limit,
+      offset,
+      distinct: true
     });
 
-    res.json(servidores);
+    res.json({
+      data: servidores,
+      paginacao: {
+        total: count,
+        pagina: page,
+        limite: limit,
+        totalPaginas: Math.ceil(count / limit)
+      }
+    });
   } catch (err) {
     console.error('Erro ao listar servidores:', err);
     res.status(500).json({ error: 'Erro interno.' });
@@ -64,7 +79,6 @@ router.post('/pedido', autenticar, [
     }
 
     // Verificar Data Limite
-    const { Configuracao } = require('../models');
     const config = await Configuracao.findOne({ where: { chave: 'data_limite_pedidos' } });
     if (config && config.valor_data) {
       if (new Date() > new Date(config.valor_data)) {
@@ -105,24 +119,19 @@ router.post('/pedido', autenticar, [
       where: { servidor_id: req.usuario.id }
     });
 
-    if (pedido) {
-      // Se já existe pedido, verificamos se podemos alterar.
-      // O frontend já checa a 'data limite', e aqui também checamos 'data_limite_pedidos' linhas acima.
-      // Portanto, se a data limite não passou, DEVE ser permitido alterar, INDEPENDENTE do status atual (atendido/não atendido).
-      // Isso permite que o usuário mude de ideia mesmo se a "prévia" do algoritmo já o atendeu.
+    let isNovo = false;
 
+    if (pedido) {
       await pedido.update({
         opcao1_cidade_id,
         opcao2_cidade_id: opcao2_cidade_id || null,
         opcao3_cidade_id: opcao3_cidade_id || null,
-        // Ao alterar o pedido, resetamos o status para 'pendente' para garantir que ele entre novamente na fila de processamento limpo
-        // ou mantemos o status, mas o próximo processamento irá sobrescrevê-lo de qualquer forma.
-        // O ideal é resetar para 'pendente' visualmente para indicar que foi modificado e aguarda nova análise.
         status: 'pendente',
         cidade_destino_final_id: null,
         observacao: 'Pedido alterado pelo servidor. Aguardando novo processamento.'
       });
     } else {
+      isNovo = true;
       pedido = await PedidoRemocao.create({
         servidor_id: req.usuario.id,
         opcao1_cidade_id,
@@ -141,7 +150,7 @@ router.post('/pedido', autenticar, [
       ]
     });
 
-    res.status(201).json(pedido);
+    res.status(isNovo ? 201 : 200).json(pedido);
   } catch (err) {
     console.error('Erro ao salvar pedido:', err);
     res.status(500).json({ error: 'Erro interno.' });
@@ -160,10 +169,9 @@ router.delete('/pedido', autenticar, async (req, res) => {
     }
 
     // Verificar Data Limite antes de cancelar
-    const { Configuracao } = require('../models');
-    const config = await Configuracao.findOne({ where: { chave: 'data_limite_pedidos' } });
-    if (config && config.valor_data) {
-      if (new Date() > new Date(config.valor_data)) {
+    const configLimite = await Configuracao.findOne({ where: { chave: 'data_limite_pedidos' } });
+    if (configLimite && configLimite.valor_data) {
+      if (new Date() > new Date(configLimite.valor_data)) {
         return res.status(403).json({ error: 'O prazo para cancelamento de pedidos já encerrou.' });
       }
     }

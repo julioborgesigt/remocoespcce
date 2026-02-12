@@ -2,21 +2,24 @@
 const useServidoresStore = Pinia.defineStore('servidores', {
   state: () => ({
     lista: [],
+    paginacao: { total: 0, pagina: 1, limite: 50, totalPaginas: 1 },
     meuPedido: null,
     carregando: false,
     erro: null
   }),
 
   actions: {
-    async carregarTodos() {
+    async carregarTodos(page = 1, limit = 50) {
       const auth = useAuthStore();
       this.carregando = true;
       try {
-        const res = await fetch('/api/servidores', {
+        const res = await fetch(`/api/servidores?page=${page}&limit=${limit}`, {
           headers: auth.authHeaders()
         });
         if (!res.ok) throw new Error('Erro ao carregar servidores');
-        this.lista = await res.json();
+        const resultado = await res.json();
+        this.lista = resultado.data;
+        this.paginacao = resultado.paginacao;
       } catch (err) {
         this.erro = err.message;
       } finally {

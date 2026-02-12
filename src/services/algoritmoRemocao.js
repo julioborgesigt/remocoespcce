@@ -9,7 +9,59 @@
  */
 
 const { Cidade, Servidor, PedidoRemocao, sequelize } = require('../models');
-const { Op } = require('sequelize');
+
+/**
+ * Executa alocação direta iterativa: percorre pedidos por antiguidade
+ * e aloca servidores em cidades com vagas disponíveis.
+ * Retorna true se pelo menos uma alocação foi feita.
+ */
+function executarAlocacaoDireta(pedidosOrdenados, statusPedidos, vagas, rotuloObservacao) {
+  const MAX_ITERACOES = 100;
+  let houveAlguma = false;
+  let houveAlteracao = true;
+  let iteracao = 0;
+
+  while (houveAlteracao && iteracao < MAX_ITERACOES) {
+    houveAlteracao = false;
+    iteracao++;
+
+    for (const pedido of pedidosOrdenados) {
+      const status = statusPedidos.get(pedido.id);
+      if (status.alocado) continue;
+
+      const cidadeOrigem = pedido.servidor.cidade_lotacao_id;
+      const preferencias = [
+        pedido.opcao1_cidade_id,
+        pedido.opcao2_cidade_id,
+        pedido.opcao3_cidade_id
+      ].filter(Boolean);
+
+      for (let i = 0; i < preferencias.length; i++) {
+        const cidadeDestinoId = preferencias[i];
+        if (cidadeDestinoId === cidadeOrigem) continue;
+
+        const vagasDisponiveis = vagas.get(cidadeDestinoId) || 0;
+
+        if (vagasDisponiveis > 0) {
+          vagas.set(cidadeDestinoId, vagasDisponiveis - 1);
+          vagas.set(cidadeOrigem, (vagas.get(cidadeOrigem) || 0) + 1);
+
+          status.alocado = true;
+          status.cidadeDestino = cidadeDestinoId;
+          status.observacao = `${rotuloObservacao} (${i + 1}ª opção, iteração ${iteracao})`;
+
+          houveAlteracao = true;
+          houveAlguma = true;
+          break;
+        }
+      }
+
+      if (houveAlteracao) break;
+    }
+  }
+
+  return houveAlguma;
+}
 
 /**
  * Executa o processamento completo de remoção.
@@ -74,55 +126,7 @@ async function processarRemocao() {
     }
 
     // ── 3. FASE 1 — Alocação Direta Iterativa ───────────────
-    let houveAlteracao = true;
-    let iteracao = 0;
-    const MAX_ITERACOES = 100; // safety guard
-
-    while (houveAlteracao && iteracao < MAX_ITERACOES) {
-      houveAlteracao = false;
-      iteracao++;
-
-      for (const pedido of pedidosOrdenados) {
-        const status = statusPedidos.get(pedido.id);
-        if (status.alocado) continue;
-
-        const cidadeOrigem = pedido.servidor.cidade_lotacao_id;
-        const preferencias = [
-          pedido.opcao1_cidade_id,
-          pedido.opcao2_cidade_id,
-          pedido.opcao3_cidade_id
-        ].filter(Boolean);
-
-        for (let i = 0; i < preferencias.length; i++) {
-          const cidadeDestinoId = preferencias[i];
-
-          // Não pode ir para a própria cidade
-          if (cidadeDestinoId === cidadeOrigem) continue;
-
-          const vagasDisponiveis = vagas.get(cidadeDestinoId) || 0;
-
-          if (vagasDisponiveis > 0) {
-            // Alocar!
-            vagas.set(cidadeDestinoId, vagasDisponiveis - 1);
-            vagas.set(cidadeOrigem, (vagas.get(cidadeOrigem) || 0) + 1); // Vaga dinâmica
-
-            status.alocado = true;
-            status.cidadeDestino = cidadeDestinoId;
-            status.observacao = `Alocação direta (${i + 1}ª opção, iteração ${iteracao})`;
-
-            houveAlteracao = true;
-
-            // IMPORTANTE: Se alocamos uma vaga, devemos reiniciar a iteração desde o início da lista de pedidos.
-            // Isso garante que um servidor MAIS ANTIGO, que foi pulado anteriormente por falta de vaga,
-            // tenha prioridade sobre servidores mais novos caso a vaga que abriu seja a que ele queria.
-            break;
-          }
-        }
-
-        // Se houve alteração (alocação), sai do loop de pedidos para reiniciar o while (voltar ao topo da lista)
-        if (houveAlteracao) break;
-      }
-    }
+    executarAlocacaoDireta(pedidosOrdenados, statusPedidos, vagas, 'Alocação direta');
 
     // ── 4. FASE 2 — Detecção de Ciclos (Permutas) ───────────
     let ciclosResolvidos = true;
@@ -214,40 +218,7 @@ async function processarRemocao() {
 
       // Após resolver ciclos, re-executar alocação direta (novas vagas podem ter aberto)
       if (ciclosResolvidos) {
-        let houveNova = true;
-        while (houveNova) {
-          houveNova = false;
-          for (const pedido of pedidosOrdenados) {
-            const status = statusPedidos.get(pedido.id);
-            if (status.alocado) continue;
-
-            const cidadeOrigem = pedido.servidor.cidade_lotacao_id;
-            const preferencias = [
-              pedido.opcao1_cidade_id,
-              pedido.opcao2_cidade_id,
-              pedido.opcao3_cidade_id
-            ].filter(Boolean);
-
-            for (let i = 0; i < preferencias.length; i++) {
-              const cidadeDestinoId = preferencias[i];
-              if (cidadeDestinoId === cidadeOrigem) continue;
-              const vagasDisponiveis = vagas.get(cidadeDestinoId) || 0;
-
-              if (vagasDisponiveis > 0) {
-                vagas.set(cidadeDestinoId, vagasDisponiveis - 1);
-                vagas.set(cidadeOrigem, (vagas.get(cidadeOrigem) || 0) + 1);
-                status.alocado = true;
-                status.cidadeDestino = cidadeDestinoId;
-                status.observacao = `Alocação pós-permuta (${i + 1}ª opção)`;
-                houveNova = true;
-
-                // Reiniciar do início se alocou
-                break;
-              }
-            }
-            if (houveNova) break;
-          }
-        }
+        executarAlocacaoDireta(pedidosOrdenados, statusPedidos, vagas, 'Alocação pós-permuta');
       }
     }
 

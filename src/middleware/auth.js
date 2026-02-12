@@ -1,7 +1,12 @@
 const jwt = require('jsonwebtoken');
 const { Servidor } = require('../models');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-troque-em-producao';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET não definido. Defina a variável de ambiente JWT_SECRET.');
+  process.exit(1);
+}
 
 /**
  * Middleware: exige token JWT válido
