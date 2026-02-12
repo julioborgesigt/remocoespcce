@@ -2,6 +2,7 @@
 const useCidadesStore = Pinia.defineStore('cidades', {
   state: () => ({
     lista: [],
+    concorrencia: [],
     carregando: false,
     erro: null
   }),
@@ -17,6 +18,19 @@ const useCidadesStore = Pinia.defineStore('cidades', {
         this.erro = err.message;
       } finally {
         this.carregando = false;
+      }
+    },
+
+    async carregarConcorrencia() {
+      const auth = useAuthStore();
+      try {
+        const res = await fetch('/api/cidades/concorrencia', {
+          headers: auth.authHeaders()
+        });
+        if (!res.ok) throw new Error('Erro ao carregar concorrência');
+        this.concorrencia = await res.json();
+      } catch (err) {
+        this.erro = err.message;
       }
     },
 
