@@ -11,7 +11,9 @@ const Configuracao = require('./Configuracao')(sequelize);
 // Servidor pertence a uma Cidade (lotação atual)
 Servidor.belongsTo(Cidade, {
   foreignKey: 'cidade_lotacao_id',
-  as: 'cidadeLotacao'
+  as: 'cidadeLotacao',
+  onDelete: 'RESTRICT',
+  onUpdate: 'CASCADE'
 });
 Cidade.hasMany(Servidor, {
   foreignKey: 'cidade_lotacao_id',
@@ -21,7 +23,9 @@ Cidade.hasMany(Servidor, {
 // PedidoRemocao pertence a um Servidor
 PedidoRemocao.belongsTo(Servidor, {
   foreignKey: 'servidor_id',
-  as: 'servidor'
+  as: 'servidor',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE'
 });
 Servidor.hasOne(PedidoRemocao, {
   foreignKey: 'servidor_id',
@@ -29,10 +33,10 @@ Servidor.hasOne(PedidoRemocao, {
 });
 
 // PedidoRemocao → Opções de cidade
-PedidoRemocao.belongsTo(Cidade, { foreignKey: 'opcao1_cidade_id', as: 'opcao1' });
-PedidoRemocao.belongsTo(Cidade, { foreignKey: 'opcao2_cidade_id', as: 'opcao2' });
-PedidoRemocao.belongsTo(Cidade, { foreignKey: 'opcao3_cidade_id', as: 'opcao3' });
-PedidoRemocao.belongsTo(Cidade, { foreignKey: 'cidade_destino_final_id', as: 'destinoFinal' });
+PedidoRemocao.belongsTo(Cidade, { foreignKey: 'opcao1_cidade_id', as: 'opcao1', onDelete: 'RESTRICT', onUpdate: 'CASCADE' });
+PedidoRemocao.belongsTo(Cidade, { foreignKey: 'opcao2_cidade_id', as: 'opcao2', onDelete: 'SET NULL', onUpdate: 'CASCADE' });
+PedidoRemocao.belongsTo(Cidade, { foreignKey: 'opcao3_cidade_id', as: 'opcao3', onDelete: 'SET NULL', onUpdate: 'CASCADE' });
+PedidoRemocao.belongsTo(Cidade, { foreignKey: 'cidade_destino_final_id', as: 'destinoFinal', onDelete: 'SET NULL', onUpdate: 'CASCADE' });
 
 module.exports = {
   sequelize,

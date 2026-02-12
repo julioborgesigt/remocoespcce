@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { PedidoRemocao, Servidor, Cidade } = require('../models');
+const { PedidoRemocao, Servidor, Cidade, Configuracao } = require('../models');
 const { autenticar, apenasAdmin } = require('../middleware/auth');
 const { processarRemocao } = require('../services/algoritmoRemocao');
 
@@ -9,7 +9,6 @@ router.post('/executar', autenticar, apenasAdmin, async (_req, res) => {
     const resultado = await processarRemocao();
 
     // Atualizar data do último processamento
-    const { Configuracao } = require('../models');
     let config = await Configuracao.findOne({ where: { chave: 'ultimo_processamento' } });
     if (config) {
       config.valor_data = new Date();
@@ -25,7 +24,7 @@ router.post('/executar', autenticar, apenasAdmin, async (_req, res) => {
     res.json(resultado);
   } catch (err) {
     console.error('Erro no processamento:', err);
-    res.status(500).json({ error: 'Erro ao processar remoções: ' + err.message });
+    res.status(500).json({ error: 'Erro ao processar remoções.' });
   }
 });
 
@@ -76,7 +75,6 @@ router.get('/dashboard', autenticar, apenasAdmin, async (_req, res) => {
       order: [['nome', 'ASC']]
     });
 
-    const { Configuracao } = require('../models');
     const configUltimo = await Configuracao.findOne({ where: { chave: 'ultimo_processamento' } });
 
     const vagasPorCidade = cidades.map(c => ({

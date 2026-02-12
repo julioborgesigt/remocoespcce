@@ -168,7 +168,8 @@ const LoginPage = {
       authStore.erro = null;
       const ok = await authStore.login(loginForm.matricula, loginForm.senha);
       if (ok) {
-        window.location.reload();
+        const rota = authStore.isAdmin ? '/admin/dashboard' : '/perfil';
+        router.push(rota);
       }
     }
 
@@ -176,7 +177,8 @@ const LoginPage = {
       authStore.erro = null;
       const ok = await authStore.registrar(regForm);
       if (ok) {
-        window.location.reload();
+        const rota = authStore.isAdmin ? '/admin/dashboard' : '/perfil';
+        router.push(rota);
       }
     }
 
