@@ -3,7 +3,7 @@ const AppLayout = {
   template: `
     <div>
       <!-- App Bar -->
-      <v-app-bar elevation="0" border="b" color="white">
+      <v-app-bar elevation="0" border="b">
         <v-app-bar-nav-icon @click="drawer = !drawer" class="d-lg-none"></v-app-bar-nav-icon>
         <v-app-bar-title class="text-body-1 font-weight-bold">
           <v-icon icon="mdi-shield-account" color="primary" class="mr-2"></v-icon>
@@ -14,6 +14,12 @@ const AppLayout = {
             <v-icon start icon="mdi-account"></v-icon>
             {{ authStore.nomeUsuario }}
           </v-chip>
+          <v-btn
+            :icon="temaEscuro ? 'mdi-weather-sunny' : 'mdi-weather-night'"
+            variant="text"
+            @click="alternarTema"
+            :title="temaEscuro ? 'Modo claro' : 'Modo escuro'"
+          ></v-btn>
           <v-btn icon="mdi-logout" variant="text" @click="sair" title="Sair"></v-btn>
         </template>
       </v-app-bar>
@@ -95,12 +101,21 @@ const AppLayout = {
 
   setup() {
     const authStore = useAuthStore();
-    const { useDisplay } = Vuetify;
+    const { useDisplay, useTheme } = Vuetify;
     const display = useDisplay();
+    const theme = useTheme();
     const lgAndUp = Vue.computed(() => display.lgAndUp.value);
 
     const drawer = Vue.ref(true);
     const snackbar = Vue.reactive({ show: false, text: '', color: 'success' });
+
+    const temaEscuro = Vue.computed(() => theme.global.current.value.dark);
+
+    function alternarTema() {
+      const novoTema = temaEscuro.value ? 'light' : 'dark';
+      theme.global.name.value = novoTema;
+      localStorage.setItem('tema', novoTema);
+    }
 
     // Provide snackbar globally
     Vue.provide('showSnackbar', (text, color = 'success') => {
@@ -114,6 +129,6 @@ const AppLayout = {
       window.location.reload();
     }
 
-    return { authStore, drawer, lgAndUp, snackbar, sair };
+    return { authStore, drawer, lgAndUp, snackbar, sair, temaEscuro, alternarTema };
   }
 };

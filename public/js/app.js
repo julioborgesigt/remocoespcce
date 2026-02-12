@@ -41,10 +41,13 @@ const app = createApp({
 app.component('login-page', LoginPage);
 app.component('app-layout', AppLayout);
 
+// Tema salvo pelo usuário
+const temaInicial = localStorage.getItem('tema') || 'light';
+
 // Vuetify
 const vuetify = Vuetify.createVuetify({
   theme: {
-    defaultTheme: 'light',
+    defaultTheme: temaInicial,
     themes: {
       light: {
         colors: {
@@ -53,7 +56,22 @@ const vuetify = Vuetify.createVuetify({
           success: '#2E7D32',
           warning: '#E65100',
           error: '#C62828',
-          info: '#0277BD'
+          info: '#0277BD',
+          surface: '#FFFFFF',
+          background: '#F5F5F5'
+        }
+      },
+      dark: {
+        dark: true,
+        colors: {
+          primary: '#42A5F5',
+          secondary: '#78909C',
+          success: '#66BB6A',
+          warning: '#FFA726',
+          error: '#EF5350',
+          info: '#29B6F6',
+          surface: '#1E1E1E',
+          background: '#121212'
         }
       }
     }

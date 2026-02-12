@@ -1,7 +1,83 @@
 const router = require('express').Router();
 const { body, param, validationResult } = require('express-validator');
-const { Cidade, Servidor } = require('../models');
+const { Cidade, Servidor, PedidoRemocao } = require('../models');
 const { autenticar, apenasAdmin } = require('../middleware/auth');
+
+// GET /api/cidades/concorrencia — estatísticas de concorrência por cidade (autenticado)
+router.get('/concorrencia', autenticar, async (req, res) => {
+  try {
+    const usuarioId = req.usuario.id;
+
+    // Buscar servidor logado
+    const servidor = await Servidor.findByPk(usuarioId);
+    if (!servidor) {
+      return res.status(404).json({ error: 'Servidor não encontrado.' });
+    }
+
+    // Buscar todas as cidades com vagas
+    const cidades = await Cidade.findAll({ order: [['nome', 'ASC']] });
+
+    // Buscar todos os pedidos pendentes com dados do servidor
+    const pedidos = await PedidoRemocao.findAll({
+      where: { status: 'pendente' },
+      include: [{
+        model: Servidor,
+        as: 'servidor',
+        attributes: ['id', 'data_ingresso', 'matricula']
+      }]
+    });
+
+    // Para cada cidade, calcular estatísticas
+    const resultado = cidades.map(cidade => {
+      // Quantos pedidos têm essa cidade como 1a, 2a ou 3a opção
+      const pedidosCidade = pedidos.filter(p =>
+        p.opcao1_cidade_id === cidade.id ||
+        p.opcao2_cidade_id === cidade.id ||
+        p.opcao3_cidade_id === cidade.id
+      );
+
+      // Contagem por posição de preferência
+      const como1a = pedidos.filter(p => p.opcao1_cidade_id === cidade.id).length;
+      const como2a = pedidos.filter(p => p.opcao2_cidade_id === cidade.id).length;
+      const como3a = pedidos.filter(p => p.opcao3_cidade_id === cidade.id).length;
+
+      // Ranking de antiguidade dos concorrentes (todos que pediram essa cidade)
+      const concorrentes = pedidosCidade
+        .map(p => ({
+          id: p.servidor.id,
+          dataIngresso: p.servidor.data_ingresso,
+          matricula: p.servidor.matricula
+        }))
+        .sort((a, b) => {
+          const dA = new Date(a.dataIngresso).getTime();
+          const dB = new Date(b.dataIngresso).getTime();
+          if (dA !== dB) return dA - dB;
+          return a.matricula.localeCompare(b.matricula);
+        });
+
+      // Posição do usuário logado no ranking (null se não pediu essa cidade)
+      const minhaPosicao = concorrentes.findIndex(c => c.id === usuarioId);
+
+      return {
+        id: cidade.id,
+        nome: cidade.nome,
+        vagasIniciais: cidade.vagas_iniciais,
+        totalPedidos: pedidosCidade.length,
+        como1a,
+        como2a,
+        como3a,
+        totalConcorrentes: concorrentes.length,
+        minhaPosicao: minhaPosicao >= 0 ? minhaPosicao + 1 : null, // 1-indexed, null se não pediu
+        totalNoRanking: concorrentes.length
+      };
+    });
+
+    res.json(resultado);
+  } catch (err) {
+    console.error('Erro ao buscar concorrência:', err);
+    res.status(500).json({ error: 'Erro interno.' });
+  }
+});
 
 // GET /api/cidades — lista todas (pública para selects)
 router.get('/', async (_req, res) => {

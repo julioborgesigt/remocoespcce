@@ -34,7 +34,7 @@ const UsuarioIntencao = {
         <template v-if="pedido.status === 'atendido'">
           <div class="font-weight-bold">Prévia: Pedido Atendido</div>
           <div>
-            Com base na última análise, feita em <strong>{{ configStore.ultimoProcessamentoFormatado }}</strong>, 
+            Com base na última análise, feita em <strong>{{ configStore.ultimoProcessamentoFormatado }}</strong>,
             você seria removido para: <strong>{{ pedido.destinoFinal?.nome }}</strong>
           </div>
           <div class="text-caption mt-1">{{ pedido.observacao }}</div>
@@ -53,116 +53,195 @@ const UsuarioIntencao = {
         </template>
       </v-alert>
 
-      <!-- Formulário -->
-      <!-- Removemos a restrição v-if="!pedido || pedido.status === 'pendente'" para permitir edição sempre -->
-      <v-card rounded="xl" variant="outlined" class="pa-6" max-width="600">
-        <v-form @submit.prevent="salvar" ref="form" :disabled="configStore.prazoEncerrado">
-          <v-alert type="info" variant="tonal" density="compact" class="mb-4" rounded="lg">
-            <div class="text-caption">
-              Sua cidade atual: <strong>{{ authStore.usuario?.cidadeLotacao?.nome }}</strong>.
-              Escolha cidades diferentes da sua lotação atual.
+      <v-row>
+        <!-- Formulário -->
+        <v-col cols="12" md="7">
+          <v-card rounded="xl" variant="outlined" class="pa-6">
+            <v-form @submit.prevent="salvar" ref="form" :disabled="configStore.prazoEncerrado">
+              <v-alert type="info" variant="tonal" density="compact" class="mb-4" rounded="lg">
+                <div class="text-caption">
+                  Sua cidade atual: <strong>{{ authStore.usuario?.cidadeLotacao?.nome }}</strong>.
+                  Escolha cidades diferentes da sua lotação atual.
+                </div>
+              </v-alert>
+
+              <v-select
+                v-model="formData.opcao1"
+                :items="cidadesDisponiveis"
+                item-title="nome"
+                item-value="id"
+                label="1ª Opção de Destino *"
+                prepend-inner-icon="mdi-numeric-1-circle"
+                variant="outlined"
+                density="comfortable"
+                :rules="[v => !!v || 'Obrigatório']"
+                class="mb-3"
+              >
+                <template v-slot:item="{ item, props }">
+                  <v-list-item v-bind="props">
+                    <template v-slot:append>
+                      <v-chip size="x-small" :color="corConcorrencia(item.raw.id)" variant="tonal">
+                        {{ labelVagas(item.raw.id) }}
+                      </v-chip>
+                    </template>
+                  </v-list-item>
+                </template>
+              </v-select>
+
+              <v-select
+                v-model="formData.opcao2"
+                :items="cidadesDisponiveis.filter(c => c.id !== formData.opcao1)"
+                item-title="nome"
+                item-value="id"
+                label="2ª Opção de Destino (opcional)"
+                prepend-inner-icon="mdi-numeric-2-circle"
+                variant="outlined"
+                density="comfortable"
+                clearable
+                class="mb-3"
+              >
+                <template v-slot:item="{ item, props }">
+                  <v-list-item v-bind="props">
+                    <template v-slot:append>
+                      <v-chip size="x-small" :color="corConcorrencia(item.raw.id)" variant="tonal">
+                        {{ labelVagas(item.raw.id) }}
+                      </v-chip>
+                    </template>
+                  </v-list-item>
+                </template>
+              </v-select>
+
+              <v-select
+                v-model="formData.opcao3"
+                :items="cidadesDisponiveis.filter(c => c.id !== formData.opcao1 && c.id !== formData.opcao2)"
+                item-title="nome"
+                item-value="id"
+                label="3ª Opção de Destino (opcional)"
+                prepend-inner-icon="mdi-numeric-3-circle"
+                variant="outlined"
+                density="comfortable"
+                clearable
+                class="mb-3"
+              >
+                <template v-slot:item="{ item, props }">
+                  <v-list-item v-bind="props">
+                    <template v-slot:append>
+                      <v-chip size="x-small" :color="corConcorrencia(item.raw.id)" variant="tonal">
+                        {{ labelVagas(item.raw.id) }}
+                      </v-chip>
+                    </template>
+                  </v-list-item>
+                </template>
+              </v-select>
+
+              <div class="d-flex ga-3">
+                <v-btn
+                  type="submit"
+                  color="primary"
+                  size="large"
+                  rounded="lg"
+                  prepend-icon="mdi-content-save"
+                  :loading="salvando"
+                  :disabled="configStore.prazoEncerrado"
+                >
+                  {{ pedido ? 'Atualizar Pedido' : 'Enviar Pedido' }}
+                </v-btn>
+
+                <v-btn
+                  v-if="pedido"
+                  color="error"
+                  variant="outlined"
+                  size="large"
+                  rounded="lg"
+                  prepend-icon="mdi-delete"
+                  @click="dialogCancelar = true"
+                  :disabled="configStore.prazoEncerrado"
+                >
+                  Cancelar Pedido
+                </v-btn>
+              </div>
+            </v-form>
+          </v-card>
+        </v-col>
+
+        <!-- Painel de Concorrência -->
+        <v-col cols="12" md="5">
+          <v-card rounded="xl" variant="outlined" class="pa-4">
+            <div class="d-flex align-center mb-3">
+              <v-icon icon="mdi-chart-bar" color="primary" class="mr-2"></v-icon>
+              <span class="text-subtitle-2 font-weight-bold">Concorrência por Cidade</span>
             </div>
-          </v-alert>
+            <p class="text-caption text-medium-emphasis mb-4">
+              Dados em tempo real dos pedidos pendentes. Atualize suas preferências para ver sua posição.
+            </p>
 
-          <v-select
-            v-model="formData.opcao1"
-            :items="cidadesDisponiveis"
-            item-title="nome"
-            item-value="id"
-            label="1ª Opção de Destino *"
-            prepend-inner-icon="mdi-numeric-1-circle"
-            variant="outlined"
-            density="comfortable"
-            :rules="[v => !!v || 'Obrigatório']"
-            class="mb-3"
-          >
-            <template v-slot:item="{ item, props }">
-              <v-list-item v-bind="props">
-                <template v-slot:append>
-                  <v-chip size="x-small" :color="item.raw.vagasIniciais > 0 ? 'success' : 'grey'" variant="tonal">
-                    {{ item.raw.vagasIniciais }} vaga(s)
+            <div v-if="cidadesStore.concorrencia.length === 0" class="text-center pa-4 text-medium-emphasis">
+              <v-progress-circular v-if="loading" indeterminate size="24"></v-progress-circular>
+              <span v-else>Nenhum dado disponível.</span>
+            </div>
+
+            <div v-for="cidade in cidadesSelecionadasConcorrencia" :key="cidade.id" class="mb-3">
+              <v-card
+                variant="tonal"
+                :color="corConcorrencia(cidade.id)"
+                rounded="lg"
+                class="pa-3"
+              >
+                <div class="d-flex align-center justify-space-between mb-1">
+                  <span class="text-subtitle-2 font-weight-bold">{{ cidade.nome }}</span>
+                  <v-chip
+                    :color="corConcorrencia(cidade.id)"
+                    size="x-small"
+                    variant="elevated"
+                  >
+                    {{ labelChance(cidade.id) }}
                   </v-chip>
-                </template>
-              </v-list-item>
-            </template>
-          </v-select>
+                </div>
+                <div class="d-flex ga-4 text-caption">
+                  <div>
+                    <v-icon icon="mdi-door-open" size="14" class="mr-1"></v-icon>
+                    <strong>{{ cidade.vagasIniciais }}</strong> vaga(s)
+                  </div>
+                  <div>
+                    <v-icon icon="mdi-account-group" size="14" class="mr-1"></v-icon>
+                    <strong>{{ cidade.totalPedidos }}</strong> pedido(s)
+                  </div>
+                  <div v-if="cidade.minhaPosicao">
+                    <v-icon icon="mdi-trophy" size="14" class="mr-1"></v-icon>
+                    #<strong>{{ cidade.minhaPosicao }}</strong> de {{ cidade.totalNoRanking }}
+                  </div>
+                </div>
+                <v-progress-linear
+                  class="mt-2"
+                  :model-value="cidade.vagasIniciais > 0 ? Math.min(100, (cidade.totalPedidos / cidade.vagasIniciais) * 100) : 100"
+                  :color="corConcorrencia(cidade.id)"
+                  height="4"
+                  rounded
+                ></v-progress-linear>
+                <div class="text-caption text-medium-emphasis mt-1">
+                  <span v-if="cidade.como1a > 0">{{ cidade.como1a }} como 1ª opção</span>
+                  <span v-if="cidade.como2a > 0"> · {{ cidade.como2a }} como 2ª</span>
+                  <span v-if="cidade.como3a > 0"> · {{ cidade.como3a }} como 3ª</span>
+                </div>
+              </v-card>
+            </div>
 
-          <v-select
-            v-model="formData.opcao2"
-            :items="cidadesDisponiveis.filter(c => c.id !== formData.opcao1)"
-            item-title="nome"
-            item-value="id"
-            label="2ª Opção de Destino (opcional)"
-            prepend-inner-icon="mdi-numeric-2-circle"
-            variant="outlined"
-            density="comfortable"
-            clearable
-            class="mb-3"
-          >
-            <template v-slot:item="{ item, props }">
-              <v-list-item v-bind="props">
-                <template v-slot:append>
-                  <v-chip size="x-small" :color="item.raw.vagasIniciais > 0 ? 'success' : 'grey'" variant="tonal">
-                    {{ item.raw.vagasIniciais }} vaga(s)
-                  </v-chip>
-                </template>
-              </v-list-item>
-            </template>
-          </v-select>
+            <!-- Legenda -->
+            <v-divider class="my-3"></v-divider>
+            <div class="d-flex flex-wrap ga-2">
+              <v-chip color="success" size="x-small" variant="tonal">Provável</v-chip>
+              <v-chip color="warning" size="x-small" variant="tonal">Competitivo</v-chip>
+              <v-chip color="error" size="x-small" variant="tonal">Improvável</v-chip>
+              <v-chip color="grey" size="x-small" variant="tonal">Sem vagas</v-chip>
+            </div>
+            <p class="text-caption text-medium-emphasis mt-2">
+              A posição no ranking é baseada na antiguidade (data de ingresso).
+              Dados podem mudar conforme outros servidores enviam ou alteram pedidos.
+            </p>
+          </v-card>
+        </v-col>
+      </v-row>
 
-          <v-select
-            v-model="formData.opcao3"
-            :items="cidadesDisponiveis.filter(c => c.id !== formData.opcao1 && c.id !== formData.opcao2)"
-            item-title="nome"
-            item-value="id"
-            label="3ª Opção de Destino (opcional)"
-            prepend-inner-icon="mdi-numeric-3-circle"
-            variant="outlined"
-            density="comfortable"
-            clearable
-            class="mb-3"
-          >
-            <template v-slot:item="{ item, props }">
-              <v-list-item v-bind="props">
-                <template v-slot:append>
-                  <v-chip size="x-small" :color="item.raw.vagasIniciais > 0 ? 'success' : 'grey'" variant="tonal">
-                    {{ item.raw.vagasIniciais }} vaga(s)
-                  </v-chip>
-                </template>
-              </v-list-item>
-            </template>
-          </v-select>
-
-          <div class="d-flex ga-3">
-            <v-btn
-              type="submit"
-              color="primary"
-              size="large"
-              rounded="lg"
-              prepend-icon="mdi-content-save"
-              :loading="salvando"
-              :disabled="configStore.prazoEncerrado"
-            >
-              {{ pedido ? 'Atualizar Pedido' : 'Enviar Pedido' }}
-            </v-btn>
-
-            <v-btn
-              v-if="pedido" 
-              color="error"
-              variant="outlined"
-              size="large"
-              rounded="lg"
-              prepend-icon="mdi-delete"
-              @click="dialogCancelar = true"
-              :disabled="configStore.prazoEncerrado"
-            >
-              Cancelar Pedido
-            </v-btn>
-          </div>
-        </v-form>
-      </v-card>
-
-      <!-- (Removido o card de 'Pedido Atual' simples, pois agora o form mostra os dados) -->
       <!-- Dialog Cancelar -->
       <v-dialog v-model="dialogCancelar" max-width="380">
         <v-card rounded="xl" class="pa-2">
@@ -182,7 +261,7 @@ const UsuarioIntencao = {
     const authStore = useAuthStore();
     const cidadesStore = useCidadesStore();
     const srvStore = useServidoresStore();
-    const configStore = useConfigStore(); // Novo
+    const configStore = useConfigStore();
     const showSnackbar = Vue.inject('showSnackbar', () => { });
 
     const loading = Vue.ref(true);
@@ -197,14 +276,59 @@ const UsuarioIntencao = {
       cidadesStore.lista.filter(c => c.id !== authStore.usuario?.cidadeLotacao?.id)
     );
 
+    // Cidades selecionadas pelo usuário, com dados de concorrência
+    const cidadesSelecionadasConcorrencia = Vue.computed(() => {
+      const ids = [formData.opcao1, formData.opcao2, formData.opcao3].filter(Boolean);
+      if (ids.length === 0) {
+        // Se nada selecionado, mostrar todas as cidades disponíveis (exceto lotação)
+        return cidadesStore.concorrencia.filter(
+          c => c.id !== authStore.usuario?.cidadeLotacao?.id
+        );
+      }
+      return ids
+        .map(id => cidadesStore.concorrencia.find(c => c.id === id))
+        .filter(Boolean);
+    });
+
+    function getConcorrencia(cidadeId) {
+      return cidadesStore.concorrencia.find(c => c.id === cidadeId);
+    }
+
+    function corConcorrencia(cidadeId) {
+      const c = getConcorrencia(cidadeId);
+      if (!c) return 'grey';
+      if (c.vagasIniciais === 0 && c.totalPedidos > 0) return 'grey';
+      if (c.vagasIniciais === 0) return 'grey';
+      const ratio = c.totalPedidos / c.vagasIniciais;
+      if (ratio <= 1) return 'success';
+      if (ratio <= 2) return 'warning';
+      return 'error';
+    }
+
+    function labelVagas(cidadeId) {
+      const c = getConcorrencia(cidadeId);
+      if (!c) return '...';
+      return c.vagasIniciais + ' vaga(s) · ' + c.totalPedidos + ' pedido(s)';
+    }
+
+    function labelChance(cidadeId) {
+      const c = getConcorrencia(cidadeId);
+      if (!c) return '...';
+      if (c.vagasIniciais === 0) return 'Sem vagas';
+      const ratio = c.totalPedidos / c.vagasIniciais;
+      if (ratio <= 1) return 'Provável';
+      if (ratio <= 2) return 'Competitivo';
+      return 'Improvável';
+    }
+
     Vue.onMounted(async () => {
       await Promise.all([
         cidadesStore.carregar(),
+        cidadesStore.carregarConcorrencia(),
         srvStore.carregarMeuPedido(),
-        configStore.fetchConfig() // Carregar configuração
+        configStore.fetchConfig()
       ]);
 
-      // Preencher form se já tem pedido (independente do status, pois pode editar até o prazo)
       if (pedido.value) {
         formData.opcao1 = pedido.value.opcao1_cidade_id;
         formData.opcao2 = pedido.value.opcao2_cidade_id;
@@ -215,11 +339,13 @@ const UsuarioIntencao = {
     });
 
     async function salvar() {
-      if (configStore.prazoEncerrado) return; // Proteção extra
+      if (configStore.prazoEncerrado) return;
       if (!formData.opcao1) return;
       salvando.value = true;
       try {
         await srvStore.salvarPedido(formData.opcao1, formData.opcao2, formData.opcao3);
+        // Recarregar concorrência após salvar (pedido mudou)
+        await cidadesStore.carregarConcorrencia();
         showSnackbar('Pedido salvo com sucesso!');
       } catch (err) {
         showSnackbar(err.message, 'error');
@@ -229,13 +355,15 @@ const UsuarioIntencao = {
     }
 
     async function cancelar() {
-      if (configStore.prazoEncerrado) return; // Proteção extra
+      if (configStore.prazoEncerrado) return;
       try {
         await srvStore.cancelarPedido();
         formData.opcao1 = null;
         formData.opcao2 = null;
         formData.opcao3 = null;
         dialogCancelar.value = false;
+        // Recarregar concorrência após cancelar
+        await cidadesStore.carregarConcorrencia();
         showSnackbar('Pedido cancelado.', 'warning');
       } catch (err) {
         showSnackbar(err.message, 'error');
@@ -243,9 +371,11 @@ const UsuarioIntencao = {
     }
 
     return {
-      authStore, cidadesDisponiveis, pedido, formData,
+      authStore, cidadesStore, cidadesDisponiveis, pedido, formData,
       loading, salvando, dialogCancelar,
-      salvar, cancelar, configStore // Expor configStore
+      cidadesSelecionadasConcorrencia,
+      corConcorrencia, labelVagas, labelChance,
+      salvar, cancelar, configStore
     };
   }
 };
