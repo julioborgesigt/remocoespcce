@@ -19,26 +19,67 @@ const UsuarioPerfil = {
         <v-divider class="mb-4"></v-divider>
 
         <v-row>
+          <!-- Dados Pessoais -->
           <v-col cols="12" sm="6">
-            <div class="text-caption text-medium-emphasis text-uppercase" style="letter-spacing:1px">Data de Ingresso</div>
-            <div class="text-body-1 font-weight-medium mono mt-1">{{ formatDate(user?.dataIngresso) }}</div>
+            <div class="text-caption text-medium-emphasis text-uppercase" style="letter-spacing:1px">Matrícula</div>
+            <div class="text-body-1 font-weight-medium mono mt-1">{{ user?.matricula }}</div>
           </v-col>
           <v-col cols="12" sm="6">
-            <div class="text-caption text-medium-emphasis text-uppercase" style="letter-spacing:1px">Cidade de Lotação</div>
-            <div class="text-body-1 font-weight-medium mt-1">
-              <v-icon icon="mdi-map-marker" size="16" color="primary" class="mr-1"></v-icon>
-              {{ user?.cidadeLotacao?.nome || 'Não definida' }}
-            </div>
-          </v-col>
-          <v-col cols="12" sm="6">
-            <div class="text-caption text-medium-emphasis text-uppercase" style="letter-spacing:1px">Antiguidade</div>
-            <div class="text-body-1 font-weight-medium mt-1">{{ calcAntiguidade() }}</div>
-          </v-col>
-          <v-col cols="12" sm="6">
-            <div class="text-caption text-medium-emphasis text-uppercase" style="letter-spacing:1px">Perfil</div>
+             <div class="text-caption text-medium-emphasis text-uppercase" style="letter-spacing:1px">Perfil de Acesso</div>
             <v-chip color="primary" variant="tonal" size="small" class="mt-1">
               {{ user?.perfil === 'admin' ? 'Administrador' : 'Servidor' }}
             </v-chip>
+          </v-col>
+
+           <v-col cols="12">
+            <v-divider></v-divider>
+          </v-col>
+
+          <!-- Datas -->
+          <v-col cols="12" sm="4">
+            <div class="text-caption text-medium-emphasis text-uppercase" style="letter-spacing:1px">Data de Ingresso</div>
+            <div class="text-body-2 font-weight-bold mt-1">
+                <v-icon icon="mdi-calendar-start" size="16" class="mr-1 text-medium-emphasis"></v-icon>
+                {{ formatDate(user?.data_ingresso) }}
+            </div>
+          </v-col>
+          <v-col cols="12" sm="4">
+            <div class="text-caption text-medium-emphasis text-uppercase" style="letter-spacing:1px">Data de Posse (Cargo)</div>
+            <div class="text-body-2 font-weight-bold mt-1">
+                <v-icon icon="mdi-calendar-check" size="16" class="mr-1 text-medium-emphasis"></v-icon>
+                {{ formatDate(user?.data_posse_cargo) }}
+            </div>
+          </v-col>
+           <v-col cols="12" sm="4">
+            <div class="text-caption text-medium-emphasis text-uppercase" style="letter-spacing:1px">Data na Lotação</div>
+            <div class="text-body-2 font-weight-bold mt-1">
+                <v-icon icon="mdi-map-clock" size="16" class="mr-1 text-medium-emphasis"></v-icon>
+                {{ formatDate(user?.data_lotacao_atual) }}
+            </div>
+          </v-col>
+
+          <v-col cols="12">
+            <v-divider></v-divider>
+          </v-col>
+
+          <!-- Lotação e Tempo -->
+          <v-col cols="12" sm="6">
+            <div class="text-caption text-medium-emphasis text-uppercase" style="letter-spacing:1px">Cidade de Lotação Atual</div>
+            <div class="text-h6 font-weight-bold mt-1 text-primary">
+              <v-icon icon="mdi-map-marker" size="20" color="primary" class="mr-1"></v-icon>
+              {{ user?.cidadeLotacao?.nome || 'Não definida' }}
+            </div>
+          </v-col>
+          
+          <v-col cols="12" sm="6">
+            <div class="text-caption text-medium-emphasis text-uppercase" style="letter-spacing:1px">Tempo de Serviço Total</div>
+            <div class="text-body-1 font-weight-bold mt-1">
+                <v-icon icon="mdi-timer-sand" size="18" class="mr-1 text-medium-emphasis"></v-icon>
+                {{ user?.tempo_servico_total_dias || 0 }} dias
+            </div>
+            <div class="text-caption text-medium-emphasis">
+                {{ formatarTempo(user?.tempo_servico_total_dias) }}
+            </div>
           </v-col>
         </v-row>
 
@@ -105,19 +146,18 @@ const UsuarioPerfil = {
       return d;
     }
 
-    function calcAntiguidade() {
-      if (!user.value?.data_ingresso) return '-';
-      const ingresso = new Date(user.value.data_ingresso);
-      if (isNaN(ingresso.getTime())) return '-';
+    function formatarTempo(dias) {
+      if (!dias) return '';
+      const anos = Math.floor(dias / 365);
+      const resto = dias % 365;
+      const meses = Math.floor(resto / 30);
 
-      const agora = new Date();
-      let anos = agora.getFullYear() - ingresso.getFullYear();
-      let meses = agora.getMonth() - ingresso.getMonth();
-      if (meses < 0) {
-        anos--;
-        meses += 12;
-      }
-      return `${anos} ano(s) e ${meses} mês(es)`;
+      let texto = [];
+      if (anos > 0) texto.push(`${anos} ano(s)`);
+      if (meses > 0) texto.push(`${meses} mês(es)`);
+      if (texto.length === 0) return 'Menos de 1 mês';
+
+      return '~ ' + texto.join(' e ');
     }
 
     const pedidoAlertType = Vue.computed(() => {
@@ -126,6 +166,6 @@ const UsuarioPerfil = {
       return { pendente: 'warning', atendido: 'success', nao_atendido: 'error' }[s] || 'info';
     });
 
-    return { user, srvStore, configStore, formatDate, calcAntiguidade, pedidoAlertType };
+    return { user, srvStore, configStore, formatDate, formatarTempo, pedidoAlertType };
   }
 };

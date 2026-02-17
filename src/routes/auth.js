@@ -40,7 +40,13 @@ router.post('/login', [
         matricula: servidor.matricula,
         nome: servidor.nome,
         perfil: servidor.perfil,
+        // Mantendo camelCase por compatibilidade
         dataIngresso: servidor.data_ingresso,
+        // Adicionando snake_case para padronização
+        data_ingresso: servidor.data_ingresso,
+        data_posse_cargo: servidor.data_posse_cargo,
+        data_lotacao_atual: servidor.data_lotacao_atual,
+        tempo_servico_total_dias: servidor.tempo_servico_total_dias,
         cidadeLotacao: servidor.cidadeLotacao
           ? { id: servidor.cidadeLotacao.id, nome: servidor.cidadeLotacao.nome }
           : null
@@ -60,7 +66,10 @@ router.post('/registrar', [
     .isLength({ min: 3, max: 150 }),
   body('senha').isLength({ min: 6 }).withMessage('Senha: mínimo 6 caracteres.'),
   body('data_ingresso').isISO8601().withMessage('Data de ingresso inválida.'),
-  body('cidade_lotacao_id').isInt({ min: 1 }).withMessage('Cidade de lotação é obrigatória.')
+  body('cidade_lotacao_id').isInt({ min: 1 }).withMessage('Cidade de lotação é obrigatória.'),
+  body('data_posse_cargo').optional({ checkFalsy: true }).isISO8601().withMessage('Data de posse inválida.'),
+  body('data_lotacao_atual').optional({ checkFalsy: true }).isISO8601().withMessage('Data de lotação inválida.'),
+  body('tempo_servico_total_dias').optional({ checkFalsy: true }).isInt({ min: 0 }).withMessage('Tempo de serviço deve ser um número positivo.')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -68,7 +77,11 @@ router.post('/registrar', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { matricula, nome, senha, data_ingresso, cidade_lotacao_id } = req.body;
+    const {
+      matricula, nome, senha, data_ingresso, cidade_lotacao_id,
+      data_posse_cargo, data_lotacao_atual
+    } = req.body;
+
     const matriculaUp = matricula.toUpperCase().trim();
 
     // Verifica se matrícula já existe
@@ -83,6 +96,13 @@ router.post('/registrar', [
       return res.status(400).json({ error: 'Cidade de lotação não encontrada.' });
     }
 
+    // Calcular dias de serviço automaticamente
+    // Prioridade: Data de Posse > Data de Ingresso
+    const dataInicio = data_posse_cargo ? new Date(data_posse_cargo) : new Date(data_ingresso);
+    const hoje = new Date();
+    const diffTime = Math.abs(hoje - dataInicio);
+    const tempo_servico_total_dias = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
     const senha_hash = await bcrypt.hash(senha, 12);
 
     const servidor = await Servidor.create({
@@ -90,6 +110,9 @@ router.post('/registrar', [
       nome: nome.trim(),
       senha_hash,
       data_ingresso,
+      data_posse_cargo: data_posse_cargo || null,
+      data_lotacao_atual: data_lotacao_atual || null,
+      tempo_servico_total_dias: tempo_servico_total_dias || 0,
       cidade_lotacao_id,
       perfil: 'usuario'
     });
@@ -104,6 +127,10 @@ router.post('/registrar', [
         nome: servidor.nome,
         perfil: servidor.perfil,
         dataIngresso: servidor.data_ingresso,
+        data_ingresso: servidor.data_ingresso,
+        data_posse_cargo: servidor.data_posse_cargo,
+        data_lotacao_atual: servidor.data_lotacao_atual,
+        tempo_servico_total_dias: servidor.tempo_servico_total_dias,
         cidadeLotacao: { id: cidade.id, nome: cidade.nome }
       }
     });
@@ -130,7 +157,13 @@ router.get('/me', autenticar, async (req, res) => {
       matricula: servidor.matricula,
       nome: servidor.nome,
       perfil: servidor.perfil,
+      // Mantendo camelCase por compatibilidade
       dataIngresso: servidor.data_ingresso,
+      // Adicionando snake_case para padronização
+      data_ingresso: servidor.data_ingresso,
+      data_posse_cargo: servidor.data_posse_cargo,
+      data_lotacao_atual: servidor.data_lotacao_atual,
+      tempo_servico_total_dias: servidor.tempo_servico_total_dias,
       cidadeLotacao: servidor.cidadeLotacao
         ? { id: servidor.cidadeLotacao.id, nome: servidor.cidadeLotacao.nome }
         : null

@@ -96,7 +96,7 @@ const LoginPage = {
 
                 <v-text-field
                   v-model="regForm.data_ingresso"
-                  label="Data de Ingresso"
+                  label="Data de Ingresso no Serv. Público"
                   prepend-inner-icon="mdi-calendar"
                   type="date"
                   variant="outlined"
@@ -104,6 +104,30 @@ const LoginPage = {
                   :rules="[rules.required]"
                   class="mb-2"
                 ></v-text-field>
+
+                <v-text-field
+                  v-model="regForm.data_posse_cargo"
+                  label="Data de Posse no Cargo"
+                  prepend-inner-icon="mdi-calendar-check"
+                  type="date"
+                  variant="outlined"
+                  density="comfortable"
+                  class="mb-2"
+                  hint="Para desempate na regra aprimorada"
+                  persistent-hint
+                ></v-text-field>
+
+                <v-text-field
+                  v-model="regForm.data_lotacao_atual"
+                  label="Data na Lotação Atual"
+                  prepend-inner-icon="mdi-map-clock"
+                  type="date"
+                  variant="outlined"
+                  density="comfortable"
+                  class="mb-2"
+                ></v-text-field>
+
+
 
                 <v-select
                   v-model="regForm.cidade_lotacao_id"
@@ -151,7 +175,8 @@ const LoginPage = {
     const loginForm = Vue.reactive({ matricula: '', senha: '' });
     const regForm = Vue.reactive({
       matricula: '', nome: '', senha: '',
-      data_ingresso: '', cidade_lotacao_id: null
+      data_ingresso: '', cidade_lotacao_id: null,
+      data_posse_cargo: '', data_lotacao_atual: '', tempo_servico_total_dias: ''
     });
 
     const rules = {

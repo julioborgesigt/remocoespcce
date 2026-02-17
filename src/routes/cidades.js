@@ -91,12 +91,81 @@ router.get('/', async (_req, res) => {
       }]
     });
 
-    const resultado = cidades.map(c => ({
-      id: c.id,
-      nome: c.nome,
-      vagasIniciais: c.vagas_iniciais,
-      totalServidores: c.servidoresLotados?.length || 0
-    }));
+    // Buscar contagem de interessados (pedidos pendentes)
+    // Buscar contagem de interessados (pedidos pendentes)
+    const pedidosPendentes = await PedidoRemocao.findAll({
+      where: { status: 'pendente' },
+      attributes: ['opcao1_cidade_id', 'opcao2_cidade_id', 'opcao3_cidade_id']
+    });
+
+    const interessadosMap = new Map();
+    pedidosPendentes.forEach(p => {
+      [p.opcao1_cidade_id, p.opcao2_cidade_id, p.opcao3_cidade_id].filter(Boolean).forEach(id => {
+        interessadosMap.set(id, (interessadosMap.get(id) || 0) + 1);
+      });
+    });
+
+    // Calcular Vagas Final e Efetivo Pós Remoções
+    // Efetivo Pós = Efetivo Atual + Entradas (Totais) - Saídas
+    // Vagas Final = Vagas Iniciais + Saídas - Entradas (Exceto "Novos Servidores")
+
+    const pedidosAtendidos = await PedidoRemocao.findAll({
+      where: { status: 'atendido' },
+      include: [{
+        model: Servidor,
+        as: 'servidor',
+        attributes: ['cidade_lotacao_id'] // Origem do servidor
+      }],
+      attributes: ['cidade_destino_final_id', 'observacao']
+    });
+
+    const saidasMap = new Map();
+    const entradasTotaisMap = new Map();     // Todas as entradas (para Efetivo Pós)
+    const entradasConsomeVagaMap = new Map(); // Entradas que consomem vaga (para Vagas Final)
+
+    pedidosAtendidos.forEach(p => {
+      // Saída: Servidor saiu da cidade de origem
+      if (p.servidor && p.servidor.cidade_lotacao_id) {
+        const origem = p.servidor.cidade_lotacao_id;
+        saidasMap.set(origem, (saidasMap.get(origem) || 0) + 1);
+      }
+
+      // Entrada: Servidor chegou na cidade de destino
+      if (p.cidade_destino_final_id) {
+        const destino = p.cidade_destino_final_id;
+
+        // Contabiliza entrada total
+        entradasTotaisMap.set(destino, (entradasTotaisMap.get(destino) || 0) + 1);
+
+        // Só conta como consumo de vaga se NÃO for alocação por novos servidores
+        const ehNovoServidor = p.observacao && p.observacao.includes('Alocação por Novos Servidores');
+
+        if (!ehNovoServidor) {
+          entradasConsomeVagaMap.set(destino, (entradasConsomeVagaMap.get(destino) || 0) + 1);
+        }
+      }
+    });
+
+    const resultado = cidades.map(c => {
+      const saidas = saidasMap.get(c.id) || 0;
+      const entradasTotais = entradasTotaisMap.get(c.id) || 0;
+      const entradasConsomeVaga = entradasConsomeVagaMap.get(c.id) || 0;
+
+      const vagasFinal = Math.max(0, (c.vagas_iniciais || 0) + saidas - entradasConsomeVaga);
+      const efetivoPos = c.efetivo_pos; // Usar valor persistido (pode ser null)
+
+      return {
+        id: c.id,
+        nome: c.nome,
+        vagasIniciais: c.vagas_iniciais,
+        vagasFinal,
+        efetivoIdeal: c.efetivo_ideal,
+        efetivoAtual: c.efetivo_atual,
+        efetivoPos, // Novo campo
+        totalServidores: c.servidoresLotados?.length || 0,
+        totalInteressados: interessadosMap.get(c.id) || 0
+      };
+    });
 
     res.json(resultado);
   } catch (err) {
@@ -109,7 +178,9 @@ router.get('/', async (_req, res) => {
 router.post('/', autenticar, apenasAdmin, [
   body('nome').trim().notEmpty().withMessage('Nome é obrigatório.')
     .isLength({ min: 2, max: 120 }),
-  body('vagas_iniciais').isInt({ min: 0 }).withMessage('Vagas deve ser >= 0.')
+  body('vagas_iniciais').isInt({ min: 0 }).withMessage('Vagas deve ser >= 0.'),
+  body('efetivo_ideal').optional().isInt({ min: 0 }).withMessage('Efetivo ideal deve ser >= 0.'),
+  body('efetivo_atual').optional().isInt({ min: 0 }).withMessage('Efetivo atual deve ser >= 0.')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -117,23 +188,41 @@ router.post('/', autenticar, apenasAdmin, [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { nome, vagas_iniciais } = req.body;
+    const { nome, vagas_iniciais, efetivo_ideal, efetivo_atual } = req.body;
 
     const existente = await Cidade.findOne({ where: { nome: nome.trim() } });
     if (existente) {
       return res.status(409).json({ error: 'Cidade já cadastrada.' });
     }
 
+    // Validação de Regra de Negócio: Vagas <= (Ideal - Atual)
+    // Se não enviado, assume 0
+    const vIniciais = Number(vagas_iniciais);
+    const vIdeal = Number(efetivo_ideal || 0);
+    const vAtual = Number(efetivo_atual || 0);
+
+    const maxVagas = Math.max(0, vIdeal - vAtual);
+    if (vIniciais > maxVagas) {
+      return res.status(400).json({
+        error: `Vagas iniciais (${vIniciais}) não podem exceder o déficit de efetivo (${maxVagas}).`
+      });
+    }
+
     const cidade = await Cidade.create({
       nome: nome.trim(),
-      vagas_iniciais: Number(vagas_iniciais)
+      vagas_iniciais: vIniciais,
+      efetivo_ideal: vIdeal,
+      efetivo_atual: vAtual
     });
 
     res.status(201).json({
       id: cidade.id,
       nome: cidade.nome,
       vagasIniciais: cidade.vagas_iniciais,
-      totalServidores: 0
+      efetivoIdeal: cidade.efetivo_ideal,
+      efetivoAtual: cidade.efetivo_atual,
+      totalServidores: 0,
+      totalInteressados: 0
     });
   } catch (err) {
     console.error('Erro ao criar cidade:', err);
@@ -145,7 +234,9 @@ router.post('/', autenticar, apenasAdmin, [
 router.put('/:id', autenticar, apenasAdmin, [
   param('id').isInt({ min: 1 }),
   body('nome').optional().trim().isLength({ min: 2, max: 120 }),
-  body('vagas_iniciais').optional().isInt({ min: 0 })
+  body('vagas_iniciais').optional().isInt({ min: 0 }),
+  body('efetivo_ideal').optional().isInt({ min: 0 }),
+  body('efetivo_atual').optional().isInt({ min: 0 })
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -159,14 +250,31 @@ router.put('/:id', autenticar, apenasAdmin, [
     }
 
     if (req.body.nome !== undefined) cidade.nome = req.body.nome.trim();
-    if (req.body.vagas_iniciais !== undefined) cidade.vagas_iniciais = Number(req.body.vagas_iniciais);
+
+    // Preparar valores para validação
+    const nextVagas = req.body.vagas_iniciais !== undefined ? Number(req.body.vagas_iniciais) : cidade.vagas_iniciais;
+    const nextIdeal = req.body.efetivo_ideal !== undefined ? Number(req.body.efetivo_ideal) : cidade.efetivo_ideal;
+    const nextAtual = req.body.efetivo_atual !== undefined ? Number(req.body.efetivo_atual) : cidade.efetivo_atual;
+
+    const maxVagas = Math.max(0, nextIdeal - nextAtual);
+    if (nextVagas > maxVagas) {
+      return res.status(400).json({
+        error: `Vagas iniciais (${nextVagas}) não podem exceder o déficit de efetivo (${maxVagas}).`
+      });
+    }
+
+    cidade.vagas_iniciais = nextVagas;
+    cidade.efetivo_ideal = nextIdeal;
+    cidade.efetivo_atual = nextAtual;
 
     await cidade.save();
 
     res.json({
       id: cidade.id,
       nome: cidade.nome,
-      vagasIniciais: cidade.vagas_iniciais
+      vagasIniciais: cidade.vagas_iniciais,
+      efetivoIdeal: cidade.efetivo_ideal,
+      efetivoAtual: cidade.efetivo_atual
     });
   } catch (err) {
     console.error('Erro ao atualizar cidade:', err);

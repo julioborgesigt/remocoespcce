@@ -23,12 +23,31 @@ module.exports = (sequelize) => {
       validate: {
         min: { args: [0], msg: 'Vagas não podem ser negativas.' }
       }
+    },
+    efetivo_ideal: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      allowNull: false,
+      defaultValue: 0,
+      validate: {
+        min: { args: [0], msg: 'Efetivo ideal não pode ser negativo.' }
+      }
+    },
+    efetivo_atual: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      allowNull: false,
+      defaultValue: 0,
+      validate: {
+        min: { args: [0], msg: 'Efetivo atual não pode ser negativo.' }
+      }
+    },
+    efetivo_pos: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: null,
+      comment: 'Simulação do efetivo após processamento (antes de fechar temporada)'
     }
   }, {
-    tableName: 'cidades',
-    indexes: [
-      { unique: true, fields: ['nome'] }
-    ]
+    tableName: 'cidades'
   });
 
   return Cidade;

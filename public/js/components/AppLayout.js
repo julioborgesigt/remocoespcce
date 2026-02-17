@@ -43,23 +43,24 @@ const AppLayout = {
               class="mb-1"
             ></v-list-item>
             <v-list-item
-              prepend-icon="mdi-city"
-              title="Cidades"
-              :to="{ name: 'admin-cidades' }"
-              rounded="lg"
-              class="mb-1"
-            ></v-list-item>
-            <v-list-item
               prepend-icon="mdi-account-group"
-              title="Servidores"
+              title="Pedidos"
               :to="{ name: 'admin-servidores' }"
               rounded="lg"
               class="mb-1"
             ></v-list-item>
             <v-list-item
-              prepend-icon="mdi-cog-play"
-              title="Processamento"
-              :to="{ name: 'admin-processamento' }"
+              prepend-icon="mdi-city"
+              title="Distribuição"
+              :to="{ name: 'admin-distribuicao' }"
+              rounded="lg"
+              class="mb-1"
+            ></v-list-item>
+
+            <v-list-item
+              prepend-icon="mdi-test-tube"
+              title="Testes Algoritmo"
+              :to="{ name: 'admin-testes' }"
               rounded="lg"
               class="mb-1"
             ></v-list-item>

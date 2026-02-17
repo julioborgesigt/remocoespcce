@@ -19,7 +19,10 @@ app.use(helmet({
         "'unsafe-inline'",
         "'unsafe-eval'",
         "https://unpkg.com",
-        "https://cdn.jsdelivr.net"
+        "https://cdn.jsdelivr.net",
+        "https://cdnjs.cloudflare.com",
+        "https://*.kaspersky-labs.com",
+        "https://gc.kis.v2.scr.kaspersky-labs.com"
       ],
       styleSrc: [
         "'self'",
@@ -31,12 +34,21 @@ app.use(helmet({
       ],
       fontSrc: [
         "'self'",
+        "data:",
+        "https:",
         "https://cdn.jsdelivr.net",
         "https://fonts.gstatic.com",
         "https://fonts.bunny.net"
       ],
       imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "https://cdn.jsdelivr.net"]
+      connectSrc: [
+        "'self'",
+        "https://cdn.jsdelivr.net",
+        "https://cdnjs.cloudflare.com",
+        "ws://localhost:3000", // For development hot reload if needed
+        "https://*.kaspersky-labs.com",
+        "wss://*.kaspersky-labs.com"
+      ]
     }
   }
 }));
@@ -89,6 +101,8 @@ app.use('/api/cidades', require('./src/routes/cidades'));
 app.use('/api/servidores', require('./src/routes/servidores'));
 app.use('/api/processamento', require('./src/routes/processamento'));
 app.use('/api/config', require('./src/routes/config'));
+app.use('/api/testes', require('./src/routes/testes'));
+app.use('/api/ranking', require('./src/routes/ranking'));
 
 // ── SPA fallback ───────────────────────────────────────────
 app.get('*', (_req, res) => {
@@ -114,7 +128,7 @@ async function start() {
     // Sincroniza tabelas (alter em dev, nada em prod)
     const syncOptions = process.env.NODE_ENV === 'production'
       ? {}
-      : { alter: true };
+      : { alter: false }
     await sequelize.sync(syncOptions);
     console.log('✅ Tabelas sincronizadas.');
 

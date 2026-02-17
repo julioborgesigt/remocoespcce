@@ -9,11 +9,12 @@ const useServidoresStore = Pinia.defineStore('servidores', {
   }),
 
   actions: {
-    async carregarTodos(page = 1, limit = 50) {
+    async carregarTodos(page = 1, limit = 50, comPedido = false) {
       const auth = useAuthStore();
       this.carregando = true;
       try {
-        const res = await fetch(`/api/servidores?page=${page}&limit=${limit}`, {
+        const query = new URLSearchParams({ page, limit, com_pedido: comPedido });
+        const res = await fetch(`/api/servidores?${query.toString()}`, {
           headers: auth.authHeaders()
         });
         if (!res.ok) throw new Error('Erro ao carregar servidores');
@@ -43,7 +44,7 @@ const useServidoresStore = Pinia.defineStore('servidores', {
       }
     },
 
-    async salvarPedido(opcao1, opcao2, opcao3) {
+    async salvarPedido(opcao1, opcao2, opcao3, prioridade) {
       const auth = useAuthStore();
       const res = await fetch('/api/servidores/pedido', {
         method: 'POST',
@@ -51,7 +52,8 @@ const useServidoresStore = Pinia.defineStore('servidores', {
         body: JSON.stringify({
           opcao1_cidade_id: opcao1,
           opcao2_cidade_id: opcao2 || null,
-          opcao3_cidade_id: opcao3 || null
+          opcao3_cidade_id: opcao3 || null,
+          motivo_prioridade: prioridade || 'nenhum'
         })
       });
       const data = await res.json();
@@ -71,6 +73,26 @@ const useServidoresStore = Pinia.defineStore('servidores', {
         throw new Error(data.error || 'Erro');
       }
       this.meuPedido = null;
+    },
+
+    async carregarHistorico() {
+      this.carregando = true;
+      const auth = useAuthStore();
+      try {
+        const res = await fetch('/api/processamento/historico/ultima', {
+          headers: auth.authHeaders()
+        });
+        if (!res.ok) {
+          return [];
+        }
+        const data = await res.json();
+        return data.historico || [];
+      } catch (err) {
+        console.error('Erro ao buscar histórico:', err);
+        return [];
+      } finally {
+        this.carregando = false;
+      }
     }
   }
 });

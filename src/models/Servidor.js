@@ -41,6 +41,21 @@ module.exports = (sequelize) => {
         }
       }
     },
+    data_posse_cargo: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+      comment: 'Data de posse no cargo atual (Peso maior na regra aprimorada)'
+    },
+    data_lotacao_atual: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+      comment: 'Data de chegada na lotação atual (Peso médio na regra aprimorada)'
+    },
+    tempo_servico_total_dias: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      comment: 'Tempo total de serviço público em dias (Desempate)'
+    },
     cidade_lotacao_id: {
       type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,

@@ -5,9 +5,18 @@ const Cidade = require('./Cidade')(sequelize);
 const Servidor = require('./Servidor')(sequelize);
 const PedidoRemocao = require('./PedidoRemocao')(sequelize);
 const Configuracao = require('./Configuracao')(sequelize);
+const HistoricoRemocao = require('./HistoricoRemocao')(sequelize);
 
 // ── Associações ────────────────────────────────────────────
 
+// Initialize associations if defined (Universal method)
+[Cidade, Servidor, PedidoRemocao, Configuracao, HistoricoRemocao].forEach(model => {
+  if (model.associate) {
+    model.associate({ Cidade, Servidor, PedidoRemocao, Configuracao, HistoricoRemocao });
+  }
+});
+
+// Associações Manuais (Legado - Mantendo para garantir compatibilidade se usadas diretamente)
 // Servidor pertence a uma Cidade (lotação atual)
 Servidor.belongsTo(Cidade, {
   foreignKey: 'cidade_lotacao_id',
@@ -43,5 +52,6 @@ module.exports = {
   Cidade,
   Servidor,
   PedidoRemocao,
-  Configuracao
+  Configuracao,
+  HistoricoRemocao
 };

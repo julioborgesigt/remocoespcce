@@ -2,6 +2,7 @@ const useConfigStore = Pinia.defineStore('config', {
     state: () => ({
         dataLimite: null,
         ultimoProcessamento: null,
+        totalNovosServidores: 0,
         loading: false,
         error: null
     }),
@@ -17,6 +18,7 @@ const useConfigStore = Pinia.defineStore('config', {
                 const data = await response.json();
                 this.dataLimite = data.dataLimite;
                 this.ultimoProcessamento = data.ultimoProcessamento;
+                this.totalNovosServidores = data.totalNovosServidores || 0;
             } catch (err) {
                 this.error = err.message;
                 console.error(err);
@@ -26,6 +28,16 @@ const useConfigStore = Pinia.defineStore('config', {
         },
 
         async updateDataLimite(novaData) {
+            return this.updateConfig({ dataLimite: novaData });
+        },
+
+        async updateTotalNovosServidores(total) {
+            const success = await this.updateConfig({ totalNovosServidores: total });
+            if (success) this.totalNovosServidores = total;
+            return success;
+        },
+
+        async updateConfig(payload) {
             this.loading = true;
             this.error = null;
             try {
@@ -35,7 +47,7 @@ const useConfigStore = Pinia.defineStore('config', {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     },
-                    body: JSON.stringify({ dataLimite: novaData })
+                    body: JSON.stringify(payload)
                 });
 
                 if (!response.ok) {

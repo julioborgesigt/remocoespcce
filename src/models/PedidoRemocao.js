@@ -45,6 +45,12 @@ module.exports = (sequelize) => {
       type: DataTypes.TEXT,
       allowNull: true,
       comment: 'Detalhes do processamento'
+    },
+    motivo_prioridade: {
+      type: DataTypes.ENUM('saude', 'unidade_familiar', 'seguranca', 'nenhum'),
+      allowNull: false,
+      defaultValue: 'nenhum',
+      comment: 'Motivo de prioridade legal (apenas regra aprimorada)'
     }
   }, {
     tableName: 'pedidos_remocao',

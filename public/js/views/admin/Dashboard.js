@@ -53,29 +53,155 @@ const AdminDashboard = {
           </v-col>
         </v-row>
 
-        <!-- Vagas por Cidade -->
+        <!-- Panorama de Pessoal (Novo) -->
+        <v-row class="mb-6" v-if="store.dashboard.statsExtras">
+            <!-- Balanço de Vagas -->
+            <v-col cols="12" md="4">
+                <v-card rounded="xl" variant="outlined" class="h-100">
+                    <v-card-title class="d-flex align-center">
+                        <v-icon icon="mdi-scale-balance" class="mr-2" color="primary"></v-icon>
+                        Balanço de Pessoal
+                    </v-card-title>
+                    <v-card-text>
+                        <v-list density="compact">
+                            <v-list-item>
+                                <template v-slot:prepend><v-icon icon="mdi-seat" color="grey"></v-icon></template>
+                                <v-list-item-title>Total de Vagas</v-list-item-title>
+                                <template v-slot:append><strong class="stat-value-small">{{ store.dashboard.statsExtras.totalVagasIniciais }}</strong></template>
+                            </v-list-item>
+                            <v-divider></v-divider>
+                            <v-list-item>
+                                <template v-slot:prepend><v-icon icon="mdi-account-alert" color="error"></v-icon></template>
+                                <v-list-item-title>Déficit Total (Vagas em aberto)</v-list-item-title>
+                                <template v-slot:append><strong class="stat-value-small text-error">{{ store.dashboard.statsExtras.deficitTotal }}</strong></template>
+                            </v-list-item>
+                            <v-divider></v-divider>
+                            <v-list-item>
+                                <template v-slot:prepend><v-icon icon="mdi-account-plus" color="warning"></v-icon></template>
+                                <v-list-item-title>Excedente Total</v-list-item-title>
+                                <template v-slot:append><strong class="stat-value-small text-warning">{{ store.dashboard.statsExtras.excedenteTotal }}</strong></template>
+                            </v-list-item>
+                        </v-list>
+                    </v-card-text>
+                </v-card>
+            </v-col>
+
+            <!-- Pedidos por Prioridade -->
+            <v-col cols="12" md="4">
+                <v-card rounded="xl" variant="outlined" class="h-100">
+                    <v-card-title class="d-flex align-center">
+                        <v-icon icon="mdi-priority-high" class="mr-2" color="warning"></v-icon>
+                        Pedidos por Prioridade
+                    </v-card-title>
+                    <v-card-text>
+                         <v-list density="compact">
+                            <v-list-item v-for="(qtd, tipo) in store.dashboard.statsExtras.pedidosPorPrioridade" :key="tipo">
+                                <template v-slot:prepend>
+                                    <v-icon :icon="iconePrioridade(tipo)" :color="corPrioridade(tipo)"></v-icon>
+                                </template>
+                                <v-list-item-title class="text-capitalize">{{ labelPrioridade(tipo) }}</v-list-item-title>
+                                <template v-slot:append>
+                                    <v-chip size="small" :color="corPrioridade(tipo)" variant="tonal"><strong>{{ qtd }}</strong></v-chip>
+                                </template>
+                            </v-list-item>
+                        </v-list>
+                    </v-card-text>
+                </v-card>
+            </v-col>
+            
+            <!-- Top Cidades -->
+            <v-col cols="12" md="4">
+                <v-card rounded="xl" variant="outlined" class="h-100">
+                    <v-card-title class="d-flex align-center">
+                        <v-icon icon="mdi-star" class="mr-2" color="secondary"></v-icon>
+                        Cidades Mais Procuradas
+                    </v-card-title>
+                    <v-card-text>
+                         <v-list density="compact">
+                            <v-list-item v-for="(cidade, i) in store.dashboard.statsExtras.cidadesMaisConcorridas" :key="i">
+                                <template v-slot:prepend>
+                                    <div class="text-caption font-weight-bold text-medium-emphasis mr-3">{{ i + 1 }}º</div>
+                                </template>
+                                <v-list-item-title>{{ cidade.nome }}</v-list-item-title>
+                                <template v-slot:append>
+                                    <span class="text-caption text-medium-emphasis">{{ cidade.total }} interessados</span>
+                                </template>
+                            </v-list-item>
+                            <div v-if="store.dashboard.statsExtras.cidadesMaisConcorridas.length === 0" class="text-center text-caption text-medium-emphasis mt-2">
+                                Nenhuma cidade procurada ainda.
+                            </div>
+                        </v-list>
+                    </v-card-text>
+                </v-card>
+            </v-col>
+        </v-row>
+
+        <!-- Vagas por Cidade (Tabela Melhorada) -->
         <v-card rounded="xl" class="mb-6" variant="outlined">
           <v-card-title class="d-flex align-center">
             <v-icon icon="mdi-city" class="mr-2"></v-icon>
-            Vagas por Cidade
+            Vagas e Efetivo por Cidade
           </v-card-title>
-          <v-table density="comfortable">
+          <v-table density="comfortable" hover>
             <thead>
               <tr>
                 <th>Cidade</th>
                 <th class="text-center">Vagas Iniciais</th>
-                <th class="text-center">Servidores Lotados</th>
+                <th class="text-center text-medium-emphasis">Ideal</th>
+                <th class="text-center">Atual</th>
+                <th class="text-center">Interessados</th>
+                <th class="text-center font-weight-bold">Efetivo Pós</th>
+                <th class="text-center text-primary font-weight-bold">Vagas Final</th>
+                <th class="text-center">Situação Atual</th>
+                <th class="text-center">Situação com Vagas</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="c in store.dashboard.vagasPorCidade" :key="c.id">
                 <td class="font-weight-medium">{{ c.nome }}</td>
                 <td class="text-center">
-                  <v-chip :color="c.vagasIniciais > 0 ? 'success' : 'grey'" size="small" variant="tonal">
+                  <v-chip :color="c.vagasIniciais > 0 ? 'success' : 'grey'" size="small" variant="tonal" class="font-weight-bold">
                     {{ c.vagasIniciais }}
                   </v-chip>
                 </td>
-                <td class="text-center mono">{{ c.totalServidores }}</td>
+                <td class="text-center mono text-medium-emphasis">{{ c.efetivoIdeal }}</td>
+                <td class="text-center mono">{{ c.efetivoAtual }}</td>
+                <td class="text-center">
+                  <v-chip :color="c.totalInteressados > 0 ? 'info' : 'grey'" size="small" variant="tonal">
+                     {{ c.totalInteressados }}
+                  </v-chip>
+                </td>
+                <td class="text-center mono font-weight-bold">
+                  <span v-if="c.efetivoPos !== null">{{ c.efetivoPos }}</span>
+                  <span v-else>-</span>
+                </td>
+                <td class="text-center">
+                   <v-chip :color="c.vagasFinal > 0 ? 'primary' : 'grey'" size="small" variant="flat" class="font-weight-bold">
+                      {{ c.vagasFinal }}
+                   </v-chip>
+                </td>
+                <td class="text-center">
+                    <v-chip v-if="c.deficitAtual > 0" color="error" size="small" variant="flat">
+                        - {{ c.deficitAtual }} (Déficit)
+                    </v-chip>
+                    <v-chip v-else-if="c.excedenteAtual > 0" color="warning" size="small" variant="tonal">
+                        + {{ c.excedenteAtual }} (Excedente)
+                    </v-chip>
+                    <v-chip v-else color="success" size="small" variant="text">
+                        <v-icon start icon="mdi-check"></v-icon> Ideal
+                    </v-chip>
+                </td>
+                <td class="text-center">
+                    <v-chip v-if="c.deficit > 0" color="error" size="small" variant="flat">
+                        - {{ c.deficit }} (Déficit)
+                    </v-chip>
+                    <v-chip v-else-if="c.excedente > 0" color="warning" size="small" variant="tonal">
+                        + {{ c.excedente }} (Excedente)
+                    </v-chip>
+                    <v-chip v-else color="success" size="small" variant="text">
+                        <v-icon start icon="mdi-check"></v-icon> Ideal
+                    </v-chip>
+                </td>
               </tr>
             </tbody>
           </v-table>
@@ -184,6 +310,27 @@ const AdminDashboard = {
       configStore.fetchConfig();
     });
 
-    return { store, configStore, stats, novaData, atualizarData, snackbar, snackbarColor, snackbarText };
+    const iconePrioridade = (tipo) => ({
+      seguranca: 'mdi-shield-alert',
+      saude: 'mdi-hospital-box',
+      unidade_familiar: 'mdi-home-heart',
+      nenhum: 'mdi-account'
+    }[tipo] || 'mdi-help');
+
+    const corPrioridade = (tipo) => ({
+      seguranca: 'error',
+      saude: 'info',
+      unidade_familiar: 'primary',
+      nenhum: 'grey'
+    }[tipo] || 'grey');
+
+    const labelPrioridade = (tipo) => ({
+      seguranca: 'Risco de Vida',
+      saude: 'Saúde',
+      unidade_familiar: 'Unidade Familiar',
+      nenhum: 'Sem Prioridade'
+    }[tipo] || tipo);
+
+    return { store, configStore, stats, novaData, atualizarData, snackbar, snackbarColor, snackbarText, iconePrioridade, corPrioridade, labelPrioridade };
   }
 };

@@ -6,9 +6,10 @@ const routes = [
   // Admin
   { path: '/admin', redirect: '/admin/dashboard' },
   { path: '/admin/dashboard', name: 'admin-dashboard', component: AdminDashboard },
-  { path: '/admin/cidades', name: 'admin-cidades', component: AdminCidades },
+  { path: '/admin/distribuicao', name: 'admin-distribuicao', component: AdminDistribuicao },
   { path: '/admin/servidores', name: 'admin-servidores', component: AdminServidores },
-  { path: '/admin/processamento', name: 'admin-processamento', component: AdminProcessamento },
+
+  { path: '/admin/testes', name: 'admin-testes', component: AdminTestes },
 
   // Usuário
   { path: '/perfil', name: 'usuario-perfil', component: UsuarioPerfil },

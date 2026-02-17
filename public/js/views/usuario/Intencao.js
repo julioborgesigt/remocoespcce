@@ -65,6 +65,56 @@ const UsuarioIntencao = {
                 </div>
               </v-alert>
 
+              <v-card class="pa-4 mb-4" variant="outlined" rounded="lg" style="border-color: rgba(var(--v-theme-primary), 0.5)">
+                <div class="test-subtitle-2 font-weight-bold text-primary mb-2">Prioridade Máxima (Opcional)</div>
+                <p class="text-caption text-medium-emphasis mb-2">
+                    Ordem de prioridade na Regra Aprimorada: <strong>Segurança > Saúde > Unidade Familiar</strong>.
+                    <br>
+                    Em caso de empate no motivo, o desempate é feito pela <strong>antiguidade</strong>.
+                </p>
+                
+                <v-radio-group v-model="formData.motivo_prioridade" color="primary" density="compact" hide-details>
+                    <v-radio value="nenhum" label="Nenhum (Apenas Antiguidade)"></v-radio>
+                    
+                    <v-radio value="saude">
+                        <template v-slot:label>
+                            <div>
+                                <strong class="text-body-2">Motivo de Saúde</strong>
+                                <div class="text-caption text-medium-emphasis">Do servidor, cônjuge ou dependente.</div>
+                            </div>
+                        </template>
+                    </v-radio>
+
+                    <v-radio value="unidade_familiar">
+                        <template v-slot:label>
+                            <div>
+                                <strong class="text-body-2">Unidade Familiar</strong>
+                                <div class="text-caption text-medium-emphasis">Acompanhamento de cônjuge (servidor) deslocado de ofício.</div>
+                            </div>
+                        </template>
+                    </v-radio>
+
+                    <v-radio value="seguranca">
+                        <template v-slot:label>
+                            <div>
+                                <strong class="text-body-2">Segurança Pessoal</strong>
+                                <div class="text-caption text-medium-emphasis">Vítima de violência doméstica ou ameaça de vida.</div>
+                            </div>
+                        </template>
+                    </v-radio>
+                </v-radio-group>
+                
+                <div class="mt-3">
+                  <div v-if="simulando" class="text-caption text-center text-primary">
+                    <v-progress-circular indeterminate size="20" width="2" class="mr-2"></v-progress-circular>
+                    Calculando novas chances...
+                  </div>
+                  <div v-if="rankingSimulado" class="text-caption text-center mt-1 text-success font-weight-bold">
+                    Ranking atualizado para: {{ formData.motivo_prioridade === 'nenhum' ? 'Antiguidade' : 'Prioridade Selecionada' }}
+                  </div>
+                </div>
+              </v-card>
+
               <v-select
                 v-model="formData.opcao1"
                 :items="cidadesDisponiveis"
@@ -103,6 +153,9 @@ const UsuarioIntencao = {
                 <template v-slot:item="{ item, props }">
                   <v-list-item v-bind="props">
                     <template v-slot:append>
+                      <v-chip size="x-small" color="info" variant="tonal" class="mr-1" v-if="labelRanking(item.raw.id)">
+                        {{ labelRanking(item.raw.id) }}
+                      </v-chip>
                       <v-chip size="x-small" :color="corConcorrencia(item.raw.id)" variant="tonal">
                         {{ labelVagas(item.raw.id) }}
                       </v-chip>
@@ -204,11 +257,11 @@ const UsuarioIntencao = {
                   </div>
                   <div>
                     <v-icon icon="mdi-account-group" size="14" class="mr-1"></v-icon>
-                    <strong>{{ cidade.totalPedidos }}</strong> pedido(s)
+                    <strong>{{ cidade.totalOutros !== undefined ? cidade.totalOutros : cidade.totalPedidos }}</strong> interessados
                   </div>
-                  <div v-if="cidade.minhaPosicao">
+                  <div v-if="cidade.minhaPosicao" class="text-primary font-weight-bold">
                     <v-icon icon="mdi-trophy" size="14" class="mr-1"></v-icon>
-                    #<strong>{{ cidade.minhaPosicao }}</strong> de {{ cidade.totalNoRanking }}
+                    Sua posição: {{ cidade.minhaPosicao }}º
                   </div>
                 </div>
                 <v-progress-linear
@@ -266,9 +319,11 @@ const UsuarioIntencao = {
 
     const loading = Vue.ref(true);
     const salvando = Vue.ref(false);
+    const simulando = Vue.ref(false);
+    const rankingSimulado = Vue.ref(false);
     const dialogCancelar = Vue.ref(false);
 
-    const formData = Vue.reactive({ opcao1: null, opcao2: null, opcao3: null });
+    const formData = Vue.reactive({ opcao1: null, opcao2: null, opcao3: null, motivo_prioridade: 'nenhum' });
 
     const pedido = Vue.computed(() => srvStore.meuPedido);
 
@@ -276,18 +331,47 @@ const UsuarioIntencao = {
       cidadesStore.lista.filter(c => c.id !== authStore.usuario?.cidadeLotacao?.id)
     );
 
-    // Cidades selecionadas pelo usuário, com dados de concorrência
+    // Cidades selecionadas pelo usuário, com dados de concorrência e ranking
     const cidadesSelecionadasConcorrencia = Vue.computed(() => {
       const ids = [formData.opcao1, formData.opcao2, formData.opcao3].filter(Boolean);
+      let lista = [];
+
       if (ids.length === 0) {
         // Se nada selecionado, mostrar todas as cidades disponíveis (exceto lotação)
-        return cidadesStore.concorrencia.filter(
+        lista = cidadesStore.concorrencia.filter(
           c => c.id !== authStore.usuario?.cidadeLotacao?.id
         );
+      } else {
+        lista = ids
+          .map(id => cidadesStore.concorrencia.find(c => c.id === id))
+          .filter(Boolean);
       }
-      return ids
-        .map(id => cidadesStore.concorrencia.find(c => c.id === id))
-        .filter(Boolean);
+
+      // Merge com ranking
+      return lista.map(c => {
+        const rank = cidadesStore.ranking.find(r => r.cidadeId === c.id);
+        return {
+          ...c,
+          minhaPosicao: rank ? rank.posicao : '-',
+          totalNoRanking: rank ? rank.totalConcorrentes : '-',
+          totalOutros: rank ? rank.totalOutros : '-'
+        };
+      }).sort((a, b) => {
+        // Ordenar: Provável (Green) < Competitivo (Yellow) < Improvável (Red) < Sem Vagas (Grey)
+
+        const getScore = (item) => {
+          if (item.vagasIniciais === 0) return 4; // Grey/Red priority last? Or first if strictly looking at position? Sem Vagas is worst.
+
+          let pos = item.minhaPosicao;
+          if (pos === '-') return 3; // Unknown
+
+          if (pos <= item.vagasIniciais) return 1; // Green
+          if (pos <= item.vagasIniciais * 2) return 2; // Yellow
+          return 3; // Red
+        };
+
+        return getScore(a) - getScore(b);
+      });
     });
 
     function getConcorrencia(cidadeId) {
@@ -295,11 +379,21 @@ const UsuarioIntencao = {
     }
 
     function corConcorrencia(cidadeId) {
-      const c = getConcorrencia(cidadeId);
+      const c = cidadesSelecionadasConcorrencia.value.find(c => c.id === cidadeId) || getConcorrencia(cidadeId);
       if (!c) return 'grey';
-      if (c.vagasIniciais === 0 && c.totalPedidos > 0) return 'grey';
       if (c.vagasIniciais === 0) return 'grey';
-      const ratio = c.totalPedidos / c.vagasIniciais;
+
+      // Se tiver posição calculada, usa ela
+      if (c.minhaPosicao && c.minhaPosicao !== '-') {
+        if (c.minhaPosicao <= c.vagasIniciais) return 'success';
+        if (c.minhaPosicao <= c.vagasIniciais * 2) return 'warning'; // Margem de espera
+        return 'error';
+      }
+
+      // Fallback para ratio geral se não tiver posição (ex: loading)
+      const total = c.totalPedidos || 0;
+      if (total === 0) return 'success';
+      const ratio = total / c.vagasIniciais;
       if (ratio <= 1) return 'success';
       if (ratio <= 2) return 'warning';
       return 'error';
@@ -312,19 +406,34 @@ const UsuarioIntencao = {
     }
 
     function labelChance(cidadeId) {
-      const c = getConcorrencia(cidadeId);
+      const c = cidadesSelecionadasConcorrencia.value.find(c => c.id === cidadeId) || getConcorrencia(cidadeId);
       if (!c) return '...';
       if (c.vagasIniciais === 0) return 'Sem vagas';
-      const ratio = c.totalPedidos / c.vagasIniciais;
+
+      if (c.minhaPosicao && c.minhaPosicao !== '-') {
+        if (c.minhaPosicao <= c.vagasIniciais) return 'Provável';
+        if (c.minhaPosicao <= c.vagasIniciais * 2) return 'Competitivo';
+        return 'Improvável';
+      }
+
+      const total = c.totalPedidos || 0;
+      const ratio = total / c.vagasIniciais;
       if (ratio <= 1) return 'Provável';
       if (ratio <= 2) return 'Competitivo';
       return 'Improvável';
+    }
+
+    function labelRanking(cidadeId) {
+      const rank = cidadesStore.ranking.find(r => r.cidadeId === cidadeId);
+      if (!rank) return '';
+      return `#${rank.posicao}`;
     }
 
     Vue.onMounted(async () => {
       await Promise.all([
         cidadesStore.carregar(),
         cidadesStore.carregarConcorrencia(),
+        cidadesStore.carregarRanking(),
         srvStore.carregarMeuPedido(),
         configStore.fetchConfig()
       ]);
@@ -333,17 +442,35 @@ const UsuarioIntencao = {
         formData.opcao1 = pedido.value.opcao1_cidade_id;
         formData.opcao2 = pedido.value.opcao2_cidade_id;
         formData.opcao3 = pedido.value.opcao3_cidade_id;
+        formData.motivo_prioridade = pedido.value.motivo_prioridade || 'nenhum';
       }
-
       loading.value = false;
     });
+
+    Vue.watch(
+      () => formData.motivo_prioridade,
+      async (newVal) => {
+        simulando.value = true;
+        try {
+          await cidadesStore.carregarRanking({ motivo: newVal });
+          rankingSimulado.value = true;
+          // Feedback visual rápido
+          setTimeout(() => { rankingSimulado.value = false; }, 2000);
+        } catch (e) {
+          showSnackbar('Erro ao atualizar ranking', 'error');
+        } finally {
+          simulando.value = false;
+        }
+      }
+    );
 
     async function salvar() {
       if (configStore.prazoEncerrado) return;
       if (!formData.opcao1) return;
       salvando.value = true;
       try {
-        await srvStore.salvarPedido(formData.opcao1, formData.opcao2, formData.opcao3);
+        await srvStore.salvarPedido(formData.opcao1, formData.opcao2, formData.opcao3, formData.motivo_prioridade);
+        // ...
         // Recarregar concorrência após salvar (pedido mudou)
         await cidadesStore.carregarConcorrencia();
         showSnackbar('Pedido salvo com sucesso!');
@@ -361,6 +488,7 @@ const UsuarioIntencao = {
         formData.opcao1 = null;
         formData.opcao2 = null;
         formData.opcao3 = null;
+        formData.motivo_prioridade = 'nenhum';
         dialogCancelar.value = false;
         // Recarregar concorrência após cancelar
         await cidadesStore.carregarConcorrencia();
@@ -374,8 +502,9 @@ const UsuarioIntencao = {
       authStore, cidadesStore, cidadesDisponiveis, pedido, formData,
       loading, salvando, dialogCancelar,
       cidadesSelecionadasConcorrencia,
-      corConcorrencia, labelVagas, labelChance,
-      salvar, cancelar, configStore
+      corConcorrencia, labelVagas, labelChance, labelRanking,
+      salvar, cancelar, configStore,
+      simulando, rankingSimulado
     };
   }
 };

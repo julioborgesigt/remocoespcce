@@ -3,6 +3,7 @@ const useCidadesStore = Pinia.defineStore('cidades', {
   state: () => ({
     lista: [],
     concorrencia: [],
+    ranking: [],
     carregando: false,
     erro: null
   }),
@@ -34,12 +35,17 @@ const useCidadesStore = Pinia.defineStore('cidades', {
       }
     },
 
-    async criar(nome, vagasIniciais) {
+    async criar(nome, vagasIniciais, efetivoIdeal, efetivoAtual) {
       const auth = useAuthStore();
       const res = await fetch('/api/cidades', {
         method: 'POST',
         headers: auth.authHeaders(),
-        body: JSON.stringify({ nome, vagas_iniciais: vagasIniciais })
+        body: JSON.stringify({
+          nome,
+          vagas_iniciais: vagasIniciais,
+          efetivo_ideal: efetivoIdeal,
+          efetivo_atual: efetivoAtual
+        })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || data.errors?.[0]?.msg || 'Erro');
@@ -47,12 +53,17 @@ const useCidadesStore = Pinia.defineStore('cidades', {
       return data;
     },
 
-    async atualizar(id, nome, vagasIniciais) {
+    async atualizar(id, nome, vagasIniciais, efetivoIdeal, efetivoAtual) {
       const auth = useAuthStore();
       const res = await fetch(`/api/cidades/${id}`, {
         method: 'PUT',
         headers: auth.authHeaders(),
-        body: JSON.stringify({ nome, vagas_iniciais: vagasIniciais })
+        body: JSON.stringify({
+          nome,
+          vagas_iniciais: vagasIniciais,
+          efetivo_ideal: efetivoIdeal,
+          efetivo_atual: efetivoAtual
+        })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erro');
@@ -72,6 +83,22 @@ const useCidadesStore = Pinia.defineStore('cidades', {
         throw new Error(data.error || 'Erro');
       }
       this.lista = this.lista.filter(c => c.id !== id);
+    },
+
+    async carregarRanking(filtros = {}) {
+      const auth = useAuthStore();
+      const params = new URLSearchParams(filtros).toString();
+      const url = params ? `/api/ranking?${params}` : '/api/ranking';
+
+      try {
+        const res = await fetch(url, { // Default regra=aprimorada
+          headers: auth.authHeaders()
+        });
+        if (!res.ok) throw new Error('Erro ao carregar ranking');
+        this.ranking = await res.json();
+      } catch (err) {
+        console.error('Erro ao carregar ranking:', err);
+      }
     }
   }
 });
