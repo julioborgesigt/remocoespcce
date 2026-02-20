@@ -21,9 +21,10 @@ router.post('/setup', autenticar, apenasAdmin, async (req, res) => {
         env: {
             ...process.env,
             DB_NAME: 'remocoespcce_teste',
-            DB_DIALECT: 'mysql',
+            DB_DIALECT: 'sqlite',
+            DB_STORAGE: ':memory:',
             NODE_ENV: 'test',
-            DB_LOGGING: 'true'
+            DB_LOGGING: 'false'
         }
     });
 
@@ -79,9 +80,11 @@ router.post('/setup', autenticar, apenasAdmin, async (req, res) => {
 
             res.json({
                 success: true,
-                mensagem: response.mensagemSetup,
+                mensagem: response.mensagem,
+                resultadoEsperado: response.resultadoEsperado,
                 resultadoExecucao: response.resultado,
-                dadosIniciais: response.dadosIniciais // Passa o estado inicial para o front
+                dadosIniciais: response.dadosIniciais,
+                cidades: response.cidades
             });
 
         } catch (e) {

@@ -9,25 +9,46 @@
     "seed": "node src/seeders/mock.js",
     "seed:test": "node src/seeders/mock.js --test",
     "seed:efetivo": "node src/seeders/cenario_teste_efetivo.js",
-    "create:admin": "node src/seeders/criar_admin.js"
+    "create:admin": "node src/seeders/criar_admin.js",
+    "test": "jest",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "db:migrate": "npx sequelize-cli db:migrate",
+    "build:frontend": "vite build"
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "@mdi/font": "^7.4.47",
     "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "csrf-csrf": "^4.0.3",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",
     "express-validator": "^7.2.1",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
+    "jspdf": "^4.2.0",
+    "jspdf-autotable": "^5.0.7",
     "mysql2": "^3.12.0",
-    "sequelize": "^6.37.5"
+    "pinia": "^2.3.1",
+    "sequelize": "^6.37.5",
+    "vue": "^3.5.28",
+    "vue-router": "^4.6.4",
+    "vuetify": "^3.11.8",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.4",
+    "eslint": "^10.0.0",
+    "jest": "^30.2.0",
     "nodemon": "^3.1.9",
-    "sqlite3": "^5.1.7"
+    "prettier": "^3.8.1",
+    "sequelize-cli": "^6.6.5",
+    "sqlite3": "^5.1.7",
+    "vite": "^7.3.1"
   }
 }

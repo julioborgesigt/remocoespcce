@@ -2,7 +2,7 @@ const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const { body, validationResult } = require('express-validator');
 const { Servidor, Cidade } = require('../models');
-const { gerarToken, autenticar } = require('../middleware/auth');
+const { gerarToken, autenticar, apenasAdmin } = require('../middleware/auth');
 
 // POST /api/auth/login
 router.post('/login', [
@@ -58,8 +58,8 @@ router.post('/login', [
   }
 });
 
-// POST /api/auth/registrar
-router.post('/registrar', [
+// POST /api/auth/registrar (SOMENTE ADMIN)
+router.post('/registrar', autenticar, apenasAdmin, [
   body('matricula').trim().notEmpty().withMessage('Matrícula é obrigatória.')
     .isLength({ max: 30 }).withMessage('Matrícula: máx 30 caracteres.'),
   body('nome').trim().notEmpty().withMessage('Nome é obrigatório.')

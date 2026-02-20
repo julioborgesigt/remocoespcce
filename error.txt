@@ -1,0 +1,24 @@
+[36mvite v7.3.1 [32mbuilding client environment for production...[36m[39m
+transforming...
+[33msrc/frontend/views/admin/Servidores.vue (41:9): Error when using sourcemap for reporting an error: Can't resolve original location of error.[39m
+[32m✓[39m 834 modules transformed.
+[31m✗[39m Build failed in 3.62s
+[31merror during build:
+[31msrc/frontend/views/admin/Servidores.vue (41:9): "exportToExcel" is not exported by "src/frontend/utils/exporter.js", imported by "src/frontend/views/admin/Servidores.vue".[31m
+file: [36mC:/Users/Pc/OneDrive/Documentos/remocoespcce/src/frontend/views/admin/Servidores.vue:41:9[31m
+[33m
+39: import { useCidadesStore } from '../../stores/cidades';
+40: import { useAuthStore } from '../../stores/auth';
+41: import { exportToExcel, exportToCSV, exportToPDF } from '../../utils/exporter';
+             ^
+[31m
+    at getRollupError (file:///C:/Users/Pc/OneDrive/Documentos/remocoespcce/node_modules/rollup/dist/es/shared/parseAst.js:402:41)
+    at error (file:///C:/Users/Pc/OneDrive/Documentos/remocoespcce/node_modules/rollup/dist/es/shared/parseAst.js:398:42)
+    at Module.error (file:///C:/Users/Pc/OneDrive/Documentos/remocoespcce/node_modules/rollup/dist/es/shared/node-entry.js:17040:16)
+    at Module.traceVariable (file:///C:/Users/Pc/OneDrive/Documentos/remocoespcce/node_modules/rollup/dist/es/shared/node-entry.js:17452:29)
+    at ModuleScope.findVariable (file:///C:/Users/Pc/OneDrive/Documentos/remocoespcce/node_modules/rollup/dist/es/shared/node-entry.js:15070:39)
+    at ChildScope.findVariable (file:///C:/Users/Pc/OneDrive/Documentos/remocoespcce/node_modules/rollup/dist/es/shared/node-entry.js:5673:38)
+    at FunctionScope.findVariable (file:///C:/Users/Pc/OneDrive/Documentos/remocoespcce/node_modules/rollup/dist/es/shared/node-entry.js:5673:38)
+    at FunctionBodyScope.findVariable (file:///C:/Users/Pc/OneDrive/Documentos/remocoespcce/node_modules/rollup/dist/es/shared/node-entry.js:5673:38)
+    at FunctionScope.findVariable (file:///C:/Users/Pc/OneDrive/Documentos/remocoespcce/node_modules/rollup/dist/es/shared/node-entry.js:5673:38)
+    at FunctionBodyScope.findVariable (file:///C:/Users/Pc/OneDrive/Documentos/remocoespcce/node_modules/rollup/dist/es/shared/node-entry.js:5673:38)[39m

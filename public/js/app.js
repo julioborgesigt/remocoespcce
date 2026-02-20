@@ -7,6 +7,9 @@ const app = createApp({
     const authStore = useAuthStore();
 
     onMounted(async () => {
+      // Obter token CSRF
+      await authStore.fetchCsrfToken();
+
       // Se tem token, valida
       if (authStore.token) {
         try {

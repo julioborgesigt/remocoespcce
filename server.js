@@ -4,7 +4,9 @@ const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
+const cookieParser = require('cookie-parser');
 const { sequelize } = require('./src/models');
+const { doubleCsrfProtection, generateToken } = require('./src/middleware/csrf');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,16 +16,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: [
-        "'self'",
-        "'unsafe-inline'",
-        "'unsafe-eval'",
-        "https://unpkg.com",
-        "https://cdn.jsdelivr.net",
-        "https://cdnjs.cloudflare.com",
-        "https://*.kaspersky-labs.com",
-        "https://gc.kis.v2.scr.kaspersky-labs.com"
-      ],
+      scriptSrc: ["'self'"],
       styleSrc: [
         "'self'",
         "'unsafe-inline'",
@@ -63,6 +56,15 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
+const csrfSecret = process.env.CSRF_SECRET || 'secret-csrf-key-default';
+app.use(cookieParser(csrfSecret));
+
+// Fallback preventivo caso o cliente não envie nenhum cookie e o parser não crie os objetos
+app.use((req, res, next) => {
+  req.cookies = req.cookies || {};
+  req.signedCookies = req.signedCookies || {};
+  next();
+});
 
 // Rate limiting global
 const limiter = rateLimit({
@@ -83,6 +85,7 @@ const authLimiter = rateLimit({
 app.use('/api/auth/login', authLimiter);
 
 // ── Arquivos estáticos ─────────────────────────────────────
+app.use(express.static(path.join(__dirname, 'public', 'dist')));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ── Health check ─────────────────────────────────────────────
@@ -95,7 +98,21 @@ app.get('/api/health', async (_req, res) => {
   }
 });
 
-// ── Rotas da API ───────────────────────────────────────────
+// ── Rota para obtenção do Token CSRF ───────────────────────
+app.get('/api/csrf-token', (req, res) => {
+  const token = generateToken(req, res);
+  res.json({ csrfToken: token });
+});
+
+// ── Rotas da API (Protegidas contra CSRF) ──────────────────
+app.use('/api/', (req, res, next) => {
+  // Ignora rotas GET que não requerem proteção e a própria rota de obtenção do token
+  if (req.method === 'GET' || req.path === '/csrf-token' || req.path === '/health') {
+    return next();
+  }
+  doubleCsrfProtection(req, res, next);
+});
+
 app.use('/api/auth', require('./src/routes/auth'));
 app.use('/api/cidades', require('./src/routes/cidades'));
 app.use('/api/servidores', require('./src/routes/servidores'));
@@ -106,7 +123,7 @@ app.use('/api/ranking', require('./src/routes/ranking'));
 
 // ── SPA fallback ───────────────────────────────────────────
 app.get('*', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'dist', 'index.html'));
 });
 
 // ── Error handler global ───────────────────────────────────
@@ -125,12 +142,9 @@ async function start() {
     await sequelize.authenticate();
     console.log('✅ Conexão com MySQL estabelecida.');
 
-    // Sincroniza tabelas (alter em dev, nada em prod)
-    const syncOptions = process.env.NODE_ENV === 'production'
-      ? {}
-      : { alter: false }
-    await sequelize.sync(syncOptions);
-    console.log('✅ Tabelas sincronizadas.');
+    // A partir daqui, as alterações de schema devem ser feitas por Migrations
+    // sequelize.sync() desabilitado em favor do sequelize-cli
+    console.log('✅ Validação do banco concluída. As tabelas devem estar criadas via migrações.');
 
     app.listen(PORT, () => {
       console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);

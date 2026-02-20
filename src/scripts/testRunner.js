@@ -9,7 +9,7 @@ const config = sequelize.config;
 console.error(`[TestRunner] Sequelize Config: DB=${config.database}, Host=${config.host}, Port=${config.port}, Dialect=${config.dialect}`);
 console.error(`[TestRunner] Env Vars: DB_NAME=${process.env.DB_NAME}`);
 
-if (config.database !== 'remocoespcce_teste') {
+if (config.database !== 'remocoespcce_teste' && config.dialect !== 'sqlite') {
     console.error('FATAL: TestRunner conectado ao banco ERRADO. Abortando.');
     process.exit(1);
 }

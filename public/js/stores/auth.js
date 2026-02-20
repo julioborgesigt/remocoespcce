@@ -3,6 +3,7 @@ const useAuthStore = Pinia.defineStore('auth', {
   state: () => ({
     token: localStorage.getItem('token') || null,
     usuario: JSON.parse(localStorage.getItem('usuario') || 'null'),
+    csrfToken: null,
     carregando: false,
     erro: null
   }),
@@ -14,13 +15,23 @@ const useAuthStore = Pinia.defineStore('auth', {
   },
 
   actions: {
+    async fetchCsrfToken() {
+      try {
+        const res = await fetch('/api/csrf-token');
+        const data = await res.json();
+        this.csrfToken = data.csrfToken;
+      } catch (err) {
+        console.error('Falha ao obter CSRF token', err);
+      }
+    },
+
     async login(matricula, senha) {
       this.carregando = true;
       this.erro = null;
       try {
         const res = await fetch('/api/auth/login', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: this.authHeaders(),
           body: JSON.stringify({ matricula, senha })
         });
         const data = await res.json();
@@ -48,7 +59,7 @@ const useAuthStore = Pinia.defineStore('auth', {
       try {
         const res = await fetch('/api/auth/registrar', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: this.authHeaders(),
           body: JSON.stringify(dados)
         });
         const data = await res.json();
@@ -79,10 +90,14 @@ const useAuthStore = Pinia.defineStore('auth', {
 
     // Helper para chamadas autenticadas
     authHeaders() {
-      return {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.token}`
-      };
+      const headers = { 'Content-Type': 'application/json' };
+      if (this.token) {
+        headers['Authorization'] = `Bearer ${this.token}`;
+      }
+      if (this.csrfToken) {
+        headers['x-csrf-token'] = this.csrfToken;
+      }
+      return headers;
     }
   }
 });
