@@ -7,27 +7,28 @@
       <p class="text-body-2 text-medium-emphasis mb-6">Lista ordenada por antiguidade (mais antigo primeiro)</p>
 
       <!-- Toggle View -->
-      <div class="d-flex justify-center mb-6">
+      <div class="d-flex justify-center mb-6 w-100">
         <v-btn-toggle
           v-model="modoExibicao"
           color="primary"
           rounded="xl"
           group
           mandatory
+          class="w-100 w-sm-auto d-flex"
         >
           <v-btn
             value="ativos"
-            :icon="mobile ? 'mdi-format-list-checks' : undefined"
-            :prepend-icon="!mobile ? 'mdi-format-list-checks' : undefined"
+            class="flex-grow-1 px-4 px-sm-6 py-2"
           >
-            <template v-if="!mobile">Pedidos em Aberto</template>
+            <v-icon :class="{ 'mr-2': !mobile }" size="large">mdi-format-list-checks</v-icon>
+            <span v-if="!mobile">Pedidos em Aberto</span>
           </v-btn>
           <v-btn
             value="arquivados"
-            :icon="mobile ? 'mdi-archive-check' : undefined"
-            :prepend-icon="!mobile ? 'mdi-archive-check' : undefined"
+            class="flex-grow-1 px-4 px-sm-6 py-2"
           >
-            <template v-if="!mobile">Arquivados (Atendidos)</template>
+            <v-icon :class="{ 'mr-2': !mobile }" size="large">mdi-archive-check</v-icon>
+            <span v-if="!mobile">Arquivados (Atendidos)</span>
           </v-btn>
         </v-btn-toggle>
       </div>
