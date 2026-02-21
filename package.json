@@ -39,7 +39,8 @@
     "vue": "^3.5.28",
     "vue-router": "^4.6.4",
     "vuetify": "^3.11.8",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.4",
@@ -48,7 +49,6 @@
     "nodemon": "^3.1.9",
     "prettier": "^3.8.1",
     "sequelize-cli": "^6.6.5",
-    "sqlite3": "^5.1.7",
     "vite": "^7.3.1"
   }
 }

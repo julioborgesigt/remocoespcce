@@ -16,7 +16,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://*.kaspersky-labs.com"],
       styleSrc: [
         "'self'",
         "'unsafe-inline'",
