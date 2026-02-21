@@ -39,15 +39,15 @@
         </div>
       </v-card>
 
-      <div class="d-flex align-center justify-space-between mb-6">
+      <div class="d-flex flex-column flex-sm-row align-center justify-space-between mb-6 ga-4">
         <div>
           <h1 class="text-h5 font-weight-bold mb-1">Distribuição</h1>
           <p class="text-body-2 text-medium-emphasis">Gerencie as cidades e vagas disponíveis</p>
         </div>
-        <div class="d-flex ga-2">
+        <div class="d-flex flex-column flex-sm-row ga-2 w-100" style="max-width: sm ? '100%' : 'auto'">
             <v-menu>
               <template v-slot:activator="{ props }">
-                <v-btn color="secondary" variant="tonal" prepend-icon="mdi-export" v-bind="props">
+                <v-btn :block="mobile" color="secondary" variant="tonal" prepend-icon="mdi-export" v-bind="props">
                   Exportar
                 </v-btn>
               </template>
@@ -57,7 +57,7 @@
                 <v-list-item @click="exportar('xlsx')" prepend-icon="mdi-microsoft-excel" title="Excel"></v-list-item>
               </v-list>
             </v-menu>
-            <v-btn color="primary" prepend-icon="mdi-plus" rounded="lg" @click="abrirDialog()">
+            <v-btn :block="mobile" color="primary" prepend-icon="mdi-plus" rounded="lg" @click="abrirDialog()">
               Nova Cidade
             </v-btn>
         </div>
@@ -188,10 +188,10 @@
                 ></v-text-field>
             </v-form>
           </v-card-text>
-          <v-card-actions class="pa-4 pt-0">
-            <v-spacer></v-spacer>
-            <v-btn variant="text" @click="dialog = false">Cancelar</v-btn>
-            <v-btn color="primary" variant="flat" rounded="lg" @click="salvar" :loading="salvando">
+          <v-card-actions class="d-flex flex-column flex-sm-row pa-4 pt-0 w-100 ga-2">
+            <v-spacer class="hidden-xs-only"></v-spacer>
+            <v-btn :block="mobile" variant="text" @click="dialog = false">Cancelar</v-btn>
+            <v-btn :block="mobile" color="primary" variant="flat" rounded="lg" @click="salvar" :loading="salvando">
               {{ editando ? 'Salvar' : 'Criar' }}
             </v-btn>
           </v-card-actions>
@@ -205,10 +205,10 @@
           <v-card-text>
             Tem certeza que deseja remover <strong>{{ cidadeRemover?.nome }}</strong>?
           </v-card-text>
-          <v-card-actions class="pa-4 pt-0">
-            <v-spacer></v-spacer>
-            <v-btn variant="text" @click="dialogRemover = false">Cancelar</v-btn>
-            <v-btn color="error" variant="flat" rounded="lg" @click="remover" :loading="removendo">Remover</v-btn>
+          <v-card-actions class="d-flex flex-column flex-sm-row pa-4 pt-0 w-100 ga-2">
+            <v-spacer class="hidden-xs-only"></v-spacer>
+            <v-btn :block="mobile" variant="text" @click="dialogRemover = false">Cancelar</v-btn>
+            <v-btn :block="mobile" color="error" variant="flat" rounded="lg" @click="remover" :loading="removendo">Remover</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -227,10 +227,11 @@
 
       <!-- Controles Processamento -->
       <v-card rounded="lg" variant="outlined" class="pa-4 mb-6">
-        <div class="d-flex flex-wrap ga-3 align-center">
+        <div class="d-flex flex-column flex-sm-row flex-wrap ga-3 align-sm-center">
           <v-tooltip location="bottom" text="Executa o algoritmo de distribuição de vagas com base na regra selecionada.">
             <template v-slot:activator="{ props }">
               <v-btn
+                :block="mobile"
                 color="primary"
                 prepend-icon="mdi-play-circle"
                 v-bind="props"
@@ -243,38 +244,41 @@
             </template>
           </v-tooltip>
 
-          <v-menu open-on-hover location="bottom">
-            <template v-slot:activator="{ props }">
-              <v-btn icon="mdi-information" variant="text" size="small" color="info" v-bind="props"></v-btn>
-            </template>
-            <v-sheet class="pa-4" max-width="300" rounded="xl">
-                <p class="font-weight-bold mb-1">Regra: {{ regra === 'antiguidade' ? 'Antiguidade Pura' : 'Regra Aprimorada' }}</p>
-                <div class="text-caption" v-if="regra === 'antiguidade'">
-                    Ordena apenas pela <strong>Data de Ingresso</strong> e Matrícula.
-                </div>
-                <div class="text-caption" v-else>
-                    Considera nesta ordem:
-                    <ol class="pl-4 mt-1">
-                        <li>Prioridade Legal (Segurança > Saúde > Família)</li>
-                        <li>Tempo no Cargo Atual</li>
-                        <li>Tempo na Lotação Atual</li>
-                        <li>Tempo de Serviço Total</li>
-                        <li>Data Ingresso (Desempate)</li>
-                    </ol>
-                </div>
-            </v-sheet>
-          </v-menu>
+          <div class="d-flex align-center w-100 w-sm-auto mb-2 mb-sm-0">
+              <v-menu open-on-hover location="bottom">
+                <template v-slot:activator="{ props }">
+                  <v-btn icon="mdi-information" variant="text" size="small" color="info" v-bind="props"></v-btn>
+                </template>
+                <v-sheet class="pa-4" max-width="300" rounded="xl">
+                    <p class="font-weight-bold mb-1">Regra: {{ regra === 'antiguidade' ? 'Antiguidade Pura' : 'Regra Aprimorada' }}</p>
+                    <div class="text-caption" v-if="regra === 'antiguidade'">
+                        Ordena apenas pela <strong>Data de Ingresso</strong> e Matrícula.
+                    </div>
+                    <div class="text-caption" v-else>
+                        Considera nesta ordem:
+                        <ol class="pl-4 mt-1">
+                            <li>Prioridade Legal (Segurança > Saúde > Família)</li>
+                            <li>Tempo no Cargo Atual</li>
+                            <li>Tempo na Lotação Atual</li>
+                            <li>Tempo de Serviço Total</li>
+                            <li>Data Ingresso (Desempate)</li>
+                        </ol>
+                    </div>
+                </v-sheet>
+              </v-menu>
 
-          <v-radio-group v-model="regra" inline density="compact" hide-details class="mr-4">
-            <v-radio label="Regra Antiguidade" value="antiguidade"></v-radio>
-            <v-radio label="Regra Aprimorada" value="aprimorada"></v-radio>
-          </v-radio-group>
+              <v-radio-group v-model="regra" inline density="compact" hide-details class="mr-sm-4 mx-auto mx-sm-0 flex-grow-1 flex-sm-grow-0">
+                <v-radio label="Regra Antiguidade" value="antiguidade"></v-radio>
+                <v-radio label="Regra Aprimorada" value="aprimorada"></v-radio>
+              </v-radio-group>
+          </div>
 
-          <v-divider vertical class="mx-2"></v-divider>
+          <v-divider vertical class="hidden-xs-only mx-2"></v-divider>
 
           <v-tooltip location="bottom" text="Desfaz o último processamento e permite fazer alterações novamente.">
             <template v-slot:activator="{ props }">
               <v-btn
+                :block="mobile"
                 variant="outlined"
                 color="warning"
                 size="small"
@@ -287,11 +291,12 @@
             </template>
           </v-tooltip>
 
-          <v-divider vertical class="mx-2"></v-divider>
+          <v-divider vertical class="hidden-xs-only mx-2"></v-divider>
 
           <v-tooltip location="bottom" text="Encerra o ciclo atual, efetiva as remoções atendidas e gera histórico.">
             <template v-slot:activator="{ props }">
               <v-btn
+                :block="mobile"
                 color="error"
                 size="small"
                 prepend-icon="mdi-lock-check"
@@ -306,6 +311,7 @@
           <v-tooltip location="bottom" text="Reabre a última temporada fechada, revertendo as mudanças.">
             <template v-slot:activator="{ props }">
               <v-btn
+                :block="mobile"
                 variant="text"
                 color="warning"
                 size="small"
@@ -318,12 +324,14 @@
             </template>
           </v-tooltip>
 
-          <v-spacer></v-spacer>
+          <v-spacer class="hidden-xs-only"></v-spacer>
 
-          <v-chip v-if="procStore.dashboard" color="info" size="small" variant="tonal">
-            <v-icon start icon="mdi-clock-outline"></v-icon>
-            {{ procStore.dashboard.resumo.pedidosPendentes }} pendente(s)
-          </v-chip>
+          <div class="w-100 w-sm-auto d-flex justify-center mt-2 mt-sm-0">
+              <v-chip v-if="procStore.dashboard" color="info" size="small" variant="tonal">
+                <v-icon start icon="mdi-clock-outline"></v-icon>
+                {{ procStore.dashboard.resumo.pedidosPendentes }} pendente(s)
+              </v-chip>
+          </div>
         </div>
 
         <v-alert v-if="procStore.erro" type="error" variant="tonal" class="mt-4" closable @click:close="procStore.erro = null">
@@ -345,10 +353,10 @@
           </div>
         </v-alert>
 
-        <div class="d-flex justify-end mb-2">
+        <div class="d-flex justify-end mb-2 w-100">
            <v-menu>
               <template v-slot:activator="{ props }">
-                <v-btn color="secondary" variant="text" size="small" prepend-icon="mdi-export" v-bind="props">
+                <v-btn :block="mobile" color="secondary" variant="text" size="small" prepend-icon="mdi-export" v-bind="props">
                   Exportar Resultados
                 </v-btn>
               </template>
@@ -438,10 +446,10 @@
             Isso vai reverter <strong>todos</strong> os pedidos para o status "pendente",
             permitindo reprocessar. As lotações dos servidores <strong>não</strong> serão revertidas.
           </v-card-text>
-          <v-card-actions class="pa-4 pt-0">
-            <v-spacer></v-spacer>
-            <v-btn variant="text" @click="dialogReset = false">Cancelar</v-btn>
-            <v-btn color="warning" variant="flat" rounded="lg" @click="resetar">Confirmar Reset</v-btn>
+          <v-card-actions class="d-flex flex-column flex-sm-row pa-4 pt-0 w-100 ga-2">
+            <v-spacer class="hidden-xs-only"></v-spacer>
+            <v-btn :block="mobile" variant="text" @click="dialogReset = false">Cancelar</v-btn>
+            <v-btn :block="mobile" color="warning" variant="flat" rounded="lg" @click="resetar">Confirmar Reset</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -464,10 +472,10 @@
                 </ul>
                 <p>Deseja realmente continuar?</p>
             </v-card-text>
-            <v-card-actions class="pa-4 pt-0">
-                <v-spacer></v-spacer>
-                <v-btn variant="text" @click="dialogFechar = false">Cancelar</v-btn>
-                <v-btn color="error" variant="flat" rounded="lg" :loading="fechando" @click="fecharTemporada">
+            <v-card-actions class="d-flex flex-column flex-sm-row pa-4 pt-0 w-100 ga-2">
+                <v-spacer class="hidden-xs-only"></v-spacer>
+                <v-btn :block="mobile" variant="text" @click="dialogFechar = false">Cancelar</v-btn>
+                <v-btn :block="mobile" color="error" variant="flat" rounded="lg" :loading="fechando" @click="fecharTemporada">
                     Confirmar Fechamento
                 </v-btn>
             </v-card-actions>
@@ -493,10 +501,10 @@
                 </ul>
                 <p>Tem certeza que deseja reabrir?</p>
             </v-card-text>
-            <v-card-actions class="pa-4 pt-0">
-                <v-spacer></v-spacer>
-                <v-btn variant="text" @click="dialogReabrir = false">Cancelar</v-btn>
-                <v-btn color="warning" variant="flat" rounded="lg" :loading="reabrindo" @click="reabrirTemporada">
+            <v-card-actions class="d-flex flex-column flex-sm-row pa-4 pt-0 w-100 ga-2">
+                <v-spacer class="hidden-xs-only"></v-spacer>
+                <v-btn :block="mobile" variant="text" @click="dialogReabrir = false">Cancelar</v-btn>
+                <v-btn :block="mobile" color="warning" variant="flat" rounded="lg" :loading="reabrindo" @click="reabrirTemporada">
                     Confirmar Reabertura
                 </v-btn>
             </v-card-actions>
@@ -509,10 +517,12 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed, inject } from 'vue';
+import { useDisplay } from 'vuetify';
 import { useCidadesStore } from '../../stores/cidades';
 import { useConfigStore } from '../../stores/config';
 import { useProcessamentoStore } from '../../stores/processamento';
 
+const { mobile } = useDisplay();
 const cidadesStore = useCidadesStore();
     const configStore = useConfigStore();
     const procStore = useProcessamentoStore();

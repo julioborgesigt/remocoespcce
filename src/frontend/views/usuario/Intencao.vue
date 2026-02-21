@@ -186,8 +186,9 @@
                 </template>
               </v-select>
 
-              <div class="d-flex ga-3">
+              <div class="d-flex flex-column flex-sm-row ga-3 w-100">
                 <v-btn
+                  :block="mobile"
                   type="submit"
                   color="primary"
                   size="large"
@@ -201,6 +202,7 @@
 
                 <v-btn
                   v-if="pedido"
+                  :block="mobile"
                   color="error"
                   variant="outlined"
                   size="large"
@@ -299,10 +301,10 @@
         <v-card rounded="xl" class="pa-2">
           <v-card-title class="text-error">Cancelar Pedido</v-card-title>
           <v-card-text>Tem certeza que deseja cancelar seu pedido de remoção?</v-card-text>
-          <v-card-actions class="pa-4 pt-0">
-            <v-spacer></v-spacer>
-            <v-btn variant="text" @click="dialogCancelar = false">Não</v-btn>
-            <v-btn color="error" variant="flat" rounded="lg" @click="cancelar">Sim, cancelar</v-btn>
+          <v-card-actions class="d-flex flex-column flex-sm-row pa-4 pt-0 w-100 ga-2">
+            <v-spacer class="hidden-xs-only"></v-spacer>
+            <v-btn :block="mobile" variant="text" @click="dialogCancelar = false">Não</v-btn>
+            <v-btn :block="mobile" color="error" variant="flat" rounded="lg" @click="cancelar">Sim, cancelar</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -312,11 +314,13 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed, inject, watch } from 'vue';
+import { useDisplay } from 'vuetify';
 import { useAuthStore } from '../../stores/auth';
 import { useCidadesStore } from '../../stores/cidades';
 import { useServidoresStore } from '../../stores/servidores';
 import { useConfigStore } from '../../stores/config';
 
+const { mobile } = useDisplay();
 const authStore = useAuthStore();
 const cidadesStore = useCidadesStore();
 const srvStore = useServidoresStore();

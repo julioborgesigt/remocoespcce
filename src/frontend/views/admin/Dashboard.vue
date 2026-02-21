@@ -6,8 +6,8 @@
 
       <!-- Configurações Rápidas -->
       <v-card class="mb-6 pa-4" variant="outlined" color="primary">
-        <div class="d-flex align-center justify-space-between flex-wrap">
-          <div>
+        <div class="d-flex align-center justify-space-between flex-column flex-sm-row ga-4">
+          <div class="w-100 w-sm-auto text-center text-sm-left">
             <div class="text-subtitle-1 font-weight-bold">
               <v-icon icon="mdi-calendar-clock" class="mr-2"></v-icon>
               Data Limite para Pedidos
@@ -18,15 +18,17 @@
               <span v-else class="text-success ml-2 font-weight-bold">(Aberto)</span>
             </div>
           </div>
-          <div class="d-flex align-center mt-2 mt-sm-0" style="gap: 10px">
+          <div class="d-flex flex-column flex-sm-row w-100 w-sm-auto align-stretch align-sm-center" style="gap: 10px">
             <input type="datetime-local" class="custom-date-input" v-model="novaData" />
             <v-btn 
+                :block="mobile"
                 color="primary" 
                 variant="flat" 
                 size="small" 
                 :loading="configStore.loading"
                 :disabled="!novaData"
                 @click="atualizarData"
+                class="mt-2 mt-sm-0"
             >
               Atualizar Prazo
             </v-btn>
@@ -272,9 +274,11 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useDisplay } from 'vuetify';
 import { useConfigStore } from '../../stores/config';
 import { useProcessamentoStore } from '../../stores/processamento';
 
+const { mobile } = useDisplay();
 const store = useProcessamentoStore();
 const configStore = useConfigStore();
 

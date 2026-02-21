@@ -24,7 +24,7 @@
         </v-btn-toggle>
       </div>
 
-      <div class="d-flex align-center gap-4 mb-4">
+      <div class="d-flex flex-column flex-sm-row align-center gap-4 mb-4">
         <v-text-field
             v-model="busca"
             prepend-inner-icon="mdi-magnify"
@@ -34,12 +34,13 @@
             clearable
             rounded="lg"
             hide-details
-            style="max-width:400px"
+            class="w-100"
+            style="max-width: sm ? '100%' : '400px'"
         ></v-text-field>
 
         <v-menu>
             <template #activator="{ props }">
-            <v-btn color="secondary" variant="tonal" prepend-icon="mdi-export" v-bind="props" class="ml-2">
+            <v-btn :block="mobile" color="secondary" variant="tonal" prepend-icon="mdi-export" v-bind="props" class="ml-sm-2 w-100 w-sm-auto mt-2 mt-sm-0">
                 Exportar
             </v-btn>
             </template>
@@ -262,10 +263,10 @@
                     </v-row>
                 </v-form>
             </v-card-text>
-            <v-card-actions class="pa-4 pt-0">
-                <v-spacer></v-spacer>
-                <v-btn variant="text" @click="dialogEditar = false">Cancelar</v-btn>
-                <v-btn color="primary" variant="flat" :loading="salvandoEdicao" @click="salvarEdicao">Salvar Alterações</v-btn>
+            <v-card-actions class="d-flex flex-column flex-sm-row pa-4 pt-0 w-100 ga-2">
+                <v-spacer class="hidden-xs-only"></v-spacer>
+                <v-btn :block="mobile" variant="text" @click="dialogEditar = false">Cancelar</v-btn>
+                <v-btn :block="mobile" color="primary" variant="flat" :loading="salvandoEdicao" @click="salvarEdicao">Salvar Alterações</v-btn>
             </v-card-actions>
         </v-card>
       </v-dialog>
@@ -275,11 +276,13 @@
 
 <script setup>
 import { ref, onMounted, inject, watch, computed, reactive } from 'vue';
+import { useDisplay } from 'vuetify';
 import { useServidoresStore } from '../../stores/servidores';
 import { useCidadesStore } from '../../stores/cidades';
 import { useAuthStore } from '../../stores/auth';
 import { exportToExcel, exportToCSV, exportToPDF } from '../../utils/exporter';
 
+const { mobile } = useDisplay();
 const store = useServidoresStore();
 const cidadesStore = useCidadesStore();
 const authStore = useAuthStore();
