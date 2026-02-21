@@ -5,14 +5,14 @@ const AppLayout = {
       <!-- App Bar -->
       <v-app-bar elevation="0" border="b">
         <v-app-bar-nav-icon @click="drawer = !drawer" class="d-lg-none"></v-app-bar-nav-icon>
-        <v-app-bar-title class="text-body-1 font-weight-bold d-none d-sm-block">
+        <v-app-bar-title class="text-body-1 font-weight-bold">
           <v-icon icon="mdi-shield-account" color="primary" class="mr-2"></v-icon>
           Sistema de Remoção
         </v-app-bar-title>
         <template v-slot:append>
-          <v-chip color="primary" variant="tonal" size="small" class="mr-1 mr-sm-3 pr-1 pr-sm-3">
-            <v-icon :class="{'mr-0 mr-sm-1': true}" icon="mdi-account"></v-icon>
-            <span class="d-none d-sm-inline">{{ authStore.nomeUsuario }}</span>
+          <v-chip color="primary" variant="tonal" size="small" class="mr-3">
+            <v-icon start icon="mdi-account"></v-icon>
+            {{ authStore.nomeUsuario }}
           </v-chip>
           <v-btn
             :icon="temaEscuro ? 'mdi-weather-sunny' : 'mdi-weather-night'"

@@ -40,15 +40,15 @@ const AdminDistribuicao = {
         </div>
       </v-card>
 
-      <v-row class="mb-4" align="center" justify="space-between">
-        <v-col cols="12" sm="6">
+      <div class="d-flex align-center justify-space-between mb-6">
+        <div>
           <h1 class="text-h5 font-weight-bold mb-1">Distribuição</h1>
-          <p class="text-body-2 text-medium-emphasis mb-0">Gerencie as cidades e vagas disponíveis</p>
-        </v-col>
-        <v-col cols="12" sm="6" class="d-flex flex-column flex-sm-row justify-sm-end ga-2">
+          <p class="text-body-2 text-medium-emphasis">Gerencie as cidades e vagas disponíveis</p>
+        </div>
+        <div class="d-flex ga-2">
             <v-menu>
               <template v-slot:activator="{ props }">
-                <v-btn color="secondary" variant="tonal" prepend-icon="mdi-export" v-bind="props" class="w-100 w-sm-auto">
+                <v-btn color="secondary" variant="tonal" prepend-icon="mdi-export" v-bind="props">
                   Exportar
                 </v-btn>
               </template>
@@ -58,13 +58,13 @@ const AdminDistribuicao = {
                 <v-list-item @click="exportar('xlsx')" prepend-icon="mdi-microsoft-excel" title="Excel"></v-list-item>
               </v-list>
             </v-menu>
-            <v-btn color="primary" prepend-icon="mdi-plus" rounded="lg" @click="abrirDialog()" class="w-100 w-sm-auto">
+            <v-btn color="primary" prepend-icon="mdi-plus" rounded="lg" @click="abrirDialog()">
               Nova Cidade
             </v-btn>
-        </v-col>
-      </v-row>
+        </div>
+      </div>
 
-      <v-card rounded="xl" variant="outlined" class="overflow-x-auto">
+      <v-card rounded="xl" variant="outlined">
         <v-table density="comfortable" hover>
           <thead>
             <tr>
@@ -228,113 +228,104 @@ const AdminDistribuicao = {
 
       <!-- Controles Processamento -->
       <v-card rounded="lg" variant="outlined" class="pa-4 mb-6">
-        <v-row align="center" dense>
-          <!-- Radio da Regra (Primeiro na visualização) -->
-          <v-col cols="12" md="12" class="d-flex align-center justify-center justify-md-start mb-2">
-            <v-radio-group v-model="regra" inline density="compact" hide-details class="mr-2">
-              <v-radio label="Regra Antiguidade" value="antiguidade"></v-radio>
-              <v-radio label="Regra Aprimorada" value="aprimorada"></v-radio>
-            </v-radio-group>
-            
-            <v-menu open-on-hover location="bottom">
-              <template v-slot:activator="{ props }">
-                <v-btn icon="mdi-information" variant="text" size="small" color="info" v-bind="props"></v-btn>
-              </template>
-              <v-sheet class="pa-4" max-width="300" rounded="xl">
-                  <p class="font-weight-bold mb-1">Regra: {{ regra === 'antiguidade' ? 'Antiguidade Pura' : 'Regra Aprimorada' }}</p>
-                  <div class="text-caption" v-if="regra === 'antiguidade'">
-                      Ordena apenas pela <strong>Data de Ingresso</strong> e Matrícula.
-                  </div>
-                  <div class="text-caption" v-else>
-                      Considera nesta ordem:
-                      <ol class="pl-4 mt-1">
-                          <li>Prioridade Legal (Segurança > Saúde > Família)</li>
-                          <li>Tempo no Cargo Atual</li>
-                          <li>Tempo na Lotação Atual</li>
-                          <li>Tempo de Serviço Total</li>
-                          <li>Data Ingresso (Desempate)</li>
-                      </ol>
-                  </div>
-              </v-sheet>
-            </v-menu>
-          </v-col>
+        <div class="d-flex flex-wrap ga-3 align-center">
+          <v-tooltip location="bottom" text="Executa o algoritmo de distribuição de vagas com base na regra selecionada.">
+            <template v-slot:activator="{ props }">
+              <v-btn
+                color="primary"
+                prepend-icon="mdi-play-circle"
+                v-bind="props"
+                @click="executar"
+                :loading="procStore.processando"
+                :disabled="procStore.processando"
+              >
+                Executar Processamento
+              </v-btn>
+            </template>
+          </v-tooltip>
 
-          <!-- Botões Empilhados -->
-          <v-col cols="12" sm="6" md="3">
-            <v-tooltip location="bottom" text="Executa o algoritmo de distribuição de vagas.">
-              <template v-slot:activator="{ props }">
-                <v-btn
-                  color="primary"
-                  prepend-icon="mdi-play-circle"
-                  v-bind="props"
-                  @click="executar"
-                  :loading="procStore.processando"
-                  :disabled="procStore.processando"
-                  class="w-100"
-                >
-                  Executar Processamento
-                </v-btn>
-              </template>
-            </v-tooltip>
-          </v-col>
+          <v-menu open-on-hover location="bottom">
+            <template v-slot:activator="{ props }">
+              <v-btn icon="mdi-information" variant="text" size="small" color="info" v-bind="props"></v-btn>
+            </template>
+            <v-sheet class="pa-4" max-width="300" rounded="xl">
+                <p class="font-weight-bold mb-1">Regra: {{ regra === 'antiguidade' ? 'Antiguidade Pura' : 'Regra Aprimorada' }}</p>
+                <div class="text-caption" v-if="regra === 'antiguidade'">
+                    Ordena apenas pela <strong>Data de Ingresso</strong> e Matrícula.
+                </div>
+                <div class="text-caption" v-else>
+                    Considera nesta ordem:
+                    <ol class="pl-4 mt-1">
+                        <li>Prioridade Legal (Segurança > Saúde > Família)</li>
+                        <li>Tempo no Cargo Atual</li>
+                        <li>Tempo na Lotação Atual</li>
+                        <li>Tempo de Serviço Total</li>
+                        <li>Data Ingresso (Desempate)</li>
+                    </ol>
+                </div>
+            </v-sheet>
+          </v-menu>
 
-          <v-col cols="12" sm="6" md="3">
-            <v-tooltip location="bottom" text="Desfaz o último processamento.">
-              <template v-slot:activator="{ props }">
-                <v-btn
-                  variant="outlined"
-                  color="warning"
-                  prepend-icon="mdi-undo"
-                  v-bind="props"
-                  @click="dialogReset = true"
-                  class="w-100"
-                >
-                  Desfazer Processamento
-                </v-btn>
-              </template>
-            </v-tooltip>
-          </v-col>
+          <v-radio-group v-model="regra" inline density="compact" hide-details class="mr-4">
+            <v-radio label="Regra Antiguidade" value="antiguidade"></v-radio>
+            <v-radio label="Regra Aprimorada" value="aprimorada"></v-radio>
+          </v-radio-group>
 
-          <v-col cols="12" sm="6" md="3">
-            <v-tooltip location="bottom" text="Encerra o ciclo atual efetivando as vagas.">
-              <template v-slot:activator="{ props }">
-                <v-btn
-                  color="error"
-                  prepend-icon="mdi-lock-check"
-                  v-bind="props"
-                  @click="dialogFechar = true"
-                  class="w-100"
-                >
-                  Fechar Temporada
-                </v-btn>
-              </template>
-            </v-tooltip>
-          </v-col>
+          <v-divider vertical class="mx-2"></v-divider>
 
-          <v-col cols="12" sm="6" md="3">
-            <v-tooltip location="bottom" text="Reabre a última temporada fechada.">
-              <template v-slot:activator="{ props }">
-                <v-btn
-                  variant="text"
-                  color="warning"
-                  prepend-icon="mdi-backup-restore"
-                  v-bind="props"
-                  @click="dialogReabrir = true"
-                  class="w-100"
-                >
-                 Reabrir Temp.
-                </v-btn>
-              </template>
-            </v-tooltip>
-          </v-col>
+          <v-tooltip location="bottom" text="Desfaz o último processamento e permite fazer alterações novamente.">
+            <template v-slot:activator="{ props }">
+              <v-btn
+                variant="outlined"
+                color="warning"
+                size="small"
+                prepend-icon="mdi-undo"
+                v-bind="props"
+                @click="dialogReset = true"
+              >
+                Desfazer Processamento
+              </v-btn>
+            </template>
+          </v-tooltip>
 
-          <v-col cols="12" class="text-center mt-2">
-            <v-chip v-if="procStore.dashboard" color="info" size="small" variant="tonal">
-              <v-icon start icon="mdi-clock-outline"></v-icon>
-              {{ procStore.dashboard.resumo.pedidosPendentes }} pendente(s)
-            </v-chip>
-          </v-col>
-        </v-row>
+          <v-divider vertical class="mx-2"></v-divider>
+
+          <v-tooltip location="bottom" text="Encerra o ciclo atual, efetiva as remoções atendidas e gera histórico.">
+            <template v-slot:activator="{ props }">
+              <v-btn
+                color="error"
+                size="small"
+                prepend-icon="mdi-lock-check"
+                v-bind="props"
+                @click="dialogFechar = true"
+              >
+                Fechar Temporada
+              </v-btn>
+            </template>
+          </v-tooltip>
+
+          <v-tooltip location="bottom" text="Reabre a última temporada fechada, revertendo as mudanças.">
+            <template v-slot:activator="{ props }">
+              <v-btn
+                variant="text"
+                color="warning"
+                size="small"
+                prepend-icon="mdi-backup-restore"
+                v-bind="props"
+                @click="dialogReabrir = true"
+              >
+               Reabrir Temp.
+              </v-btn>
+            </template>
+          </v-tooltip>
+
+          <v-spacer></v-spacer>
+
+          <v-chip v-if="procStore.dashboard" color="info" size="small" variant="tonal">
+            <v-icon start icon="mdi-clock-outline"></v-icon>
+            {{ procStore.dashboard.resumo.pedidosPendentes }} pendente(s)
+          </v-chip>
+        </div>
 
         <v-alert v-if="procStore.erro" type="error" variant="tonal" class="mt-4" closable @click:close="procStore.erro = null">
           {{ procStore.erro }}
@@ -378,12 +369,12 @@ const AdminDistribuicao = {
         </div>
 
         <!-- Movimentações -->
-        <v-card v-if="procStore.resultado.movimentacoes?.length" rounded="xl" variant="outlined" class="result-card mb-6 overflow-x-auto">
-          <v-card-title class="d-flex align-center min-w-max-content">
+        <v-card v-if="procStore.resultado.movimentacoes?.length" rounded="xl" variant="outlined" class="result-card mb-6">
+          <v-card-title class="d-flex align-center">
             <v-icon icon="mdi-check-circle" color="success" class="mr-2"></v-icon>
             Remoções Efetivadas ({{ procStore.resultado.movimentacoes.length }})
           </v-card-title>
-          <v-table density="comfortable" class="min-w-max-content">
+          <v-table density="comfortable">
             <thead>
               <tr>
                 <th>Matrícula</th>
@@ -414,12 +405,12 @@ const AdminDistribuicao = {
         </v-card>
 
         <!-- Não Atendidos -->
-        <v-card v-if="procStore.resultado.naoAtendidos?.length" rounded="xl" variant="outlined" class="result-card result-card--error mb-6 overflow-x-auto">
-          <v-card-title class="d-flex align-center min-w-max-content">
+        <v-card v-if="procStore.resultado.naoAtendidos?.length" rounded="xl" variant="outlined" class="result-card result-card--error mb-6">
+          <v-card-title class="d-flex align-center">
             <v-icon icon="mdi-close-circle" color="error" class="mr-2"></v-icon>
             Não Atendidos ({{ procStore.resultado.naoAtendidos.length }})
           </v-card-title>
-          <v-table density="comfortable" class="min-w-max-content">
+          <v-table density="comfortable">
             <thead>
               <tr>
                 <th>Matrícula</th>

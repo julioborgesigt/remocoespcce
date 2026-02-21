@@ -8,52 +8,54 @@ const AdminServidores = {
       <p class="text-body-2 text-medium-emphasis mb-6">Lista ordenada por antiguidade (mais antigo primeiro)</p>
 
       <!-- Toggle View -->
-      <v-tabs
-        v-model="modoExibicao"
-        color="primary"
-        align-tabs="center"
-        class="mb-6"
-      >
-        <v-tab value="ativos" prepend-icon="mdi-format-list-checks">
-          Pedidos em Aberto
-        </v-tab>
-        <v-tab value="arquivados" prepend-icon="mdi-archive-check">
-          Arquivados (Atendidos)
-        </v-tab>
-      </v-tabs>
+      <div class="d-flex justify-center mb-6">
+        <v-btn-toggle
+          v-model="modoExibicao"
+          color="primary"
+          rounded="xl"
+          group
+          mandatory
+        >
+          <v-btn value="ativos" prepend-icon="mdi-format-list-checks">
+            Pedidos em Aberto
+          </v-btn>
+          <v-btn value="arquivados" prepend-icon="mdi-archive-check">
+            Arquivados (Atendidos)
+          </v-btn>
+        </v-btn-toggle>
+      </div>
 
-      <v-row class="mb-2" dense>
-        <v-col cols="12" sm="8" md="6" class="d-flex">
-          <v-text-field
-              v-model="busca"
-              prepend-inner-icon="mdi-magnify"
-              label="Buscar por nome ou matrícula"
-              variant="outlined"
-              density="comfortable"
-              clearable
-              rounded="lg"
-              hide-details
-          ></v-text-field>
-        </v-col>
+      <div class="d-flex align-center gap-4 mb-4">
+        <v-text-field
+            v-model="busca"
+            prepend-inner-icon="mdi-magnify"
+            label="Buscar por nome ou matrícula"
+            variant="outlined"
+            density="comfortable"
+            clearable
+            rounded="lg"
+            hide-details
+            style="max-width:400px"
+        ></v-text-field>
 
-        <v-col cols="12" sm="4" md="6" class="d-flex justify-sm-end align-center">
-          <v-menu>
-              <template v-slot:activator="{ props }">
-              <v-btn color="secondary" variant="tonal" prepend-icon="mdi-export" v-bind="props" class="w-100 w-sm-auto">
-                  Exportar
-              </v-btn>
-              </template>
-              <v-list>
-              <v-list-item @click="exportar('pdf')" prepend-icon="mdi-file-pdf-box" title="PDF"></v-list-item>
-              <v-list-item @click="exportar('csv')" prepend-icon="mdi-file-delimited" title="CSV"></v-list-item>
-              <v-list-item @click="exportar('xlsx')" prepend-icon="mdi-microsoft-excel" title="Excel"></v-list-item>
-              </v-list>
-          </v-menu>
-        </v-col>
-      </v-row>
+        <v-menu>
+            <template v-slot:activator="{ props }">
+            <v-btn color="secondary" variant="tonal" prepend-icon="mdi-export" v-bind="props" class="ml-2">
+                Exportar
+            </v-btn>
+            </template>
+            <v-list>
+            <v-list-item @click="exportar('pdf')" prepend-icon="mdi-file-pdf-box" title="PDF"></v-list-item>
+            <v-list-item @click="exportar('csv')" prepend-icon="mdi-file-delimited" title="CSV"></v-list-item>
+            <v-list-item @click="exportar('xlsx')" prepend-icon="mdi-microsoft-excel" title="Excel"></v-list-item>
+            </v-list>
+        </v-menu>
+      </div>
+
+      </div>
 
       <!-- Tabela Ativos -->
-      <v-card v-if="modoExibicao === 'ativos'" rounded="xl" variant="outlined" class="overflow-x-auto">
+      <v-card v-if="modoExibicao === 'ativos'" rounded="xl" variant="outlined">
         <v-progress-linear v-if="store.carregando" indeterminate color="primary"></v-progress-linear>
         <v-table density="comfortable" hover>
           <thead>
@@ -139,7 +141,7 @@ const AdminServidores = {
       </v-card>
 
       <!-- Tabela Arquivados -->
-      <v-card v-else rounded="xl" variant="outlined" class="overflow-x-auto">
+      <v-card v-else rounded="xl" variant="outlined">
         <v-progress-linear v-if="carregandoArquivados" indeterminate color="primary"></v-progress-linear>
         
         <v-alert v-if="!listaArquivados.length && !carregandoArquivados" type="info" variant="text" class="ma-4">

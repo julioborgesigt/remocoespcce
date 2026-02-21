@@ -19,8 +19,8 @@ const AdminDashboard = {
               <span v-else class="text-success ml-2 font-weight-bold">(Aberto)</span>
             </div>
           </div>
-          <div class="d-flex flex-column flex-sm-row align-sm-center mt-2 mt-sm-0 w-100 w-sm-auto" style="gap: 10px">
-            <input type="datetime-local" class="custom-date-input flex-grow-1 flex-sm-grow-0" style="min-width: 0" v-model="novaData" />
+          <div class="d-flex align-center mt-2 mt-sm-0" style="gap: 10px">
+            <input type="datetime-local" class="custom-date-input" v-model="novaData" />
             <v-btn 
                 color="primary" 
                 variant="flat" 
@@ -28,7 +28,6 @@ const AdminDashboard = {
                 :loading="configStore.loading"
                 :disabled="!novaData"
                 @click="atualizarData"
-                class="w-100 w-sm-auto"
             >
               Atualizar Prazo
             </v-btn>
@@ -138,12 +137,12 @@ const AdminDashboard = {
         </v-row>
 
         <!-- Vagas por Cidade (Tabela Melhorada) -->
-        <v-card rounded="xl" class="mb-6 overflow-x-auto" variant="outlined">
-          <v-card-title class="d-flex align-center min-w-max-content">
+        <v-card rounded="xl" class="mb-6" variant="outlined">
+          <v-card-title class="d-flex align-center">
             <v-icon icon="mdi-city" class="mr-2"></v-icon>
             Vagas e Efetivo por Cidade
           </v-card-title>
-          <v-table density="comfortable" hover class="min-w-max-content">
+          <v-table density="comfortable" hover>
             <thead>
               <tr>
                 <th>Cidade</th>

@@ -187,7 +187,7 @@ const UsuarioIntencao = {
                 </template>
               </v-select>
 
-              <div class="d-flex flex-wrap flex-sm-nowrap ga-3 mt-6">
+              <div class="d-flex ga-3">
                 <v-btn
                   type="submit"
                   color="primary"
@@ -196,7 +196,6 @@ const UsuarioIntencao = {
                   prepend-icon="mdi-content-save"
                   :loading="salvando"
                   :disabled="configStore.prazoEncerrado"
-                  class="w-100 w-sm-auto flex-grow-1"
                 >
                   {{ pedido ? 'Atualizar Pedido' : 'Enviar Pedido' }}
                 </v-btn>
@@ -210,7 +209,6 @@ const UsuarioIntencao = {
                   prepend-icon="mdi-delete"
                   @click="dialogCancelar = true"
                   :disabled="configStore.prazoEncerrado"
-                  class="w-100 w-sm-auto"
                 >
                   Cancelar Pedido
                 </v-btn>
