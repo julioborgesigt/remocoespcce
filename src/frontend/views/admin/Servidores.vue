@@ -15,11 +15,19 @@
           group
           mandatory
         >
-          <v-btn value="ativos" prepend-icon="mdi-format-list-checks">
-            Pedidos em Aberto
+          <v-btn
+            value="ativos"
+            :icon="mobile ? 'mdi-format-list-checks' : undefined"
+            :prepend-icon="!mobile ? 'mdi-format-list-checks' : undefined"
+          >
+            <template v-if="!mobile">Pedidos em Aberto</template>
           </v-btn>
-          <v-btn value="arquivados" prepend-icon="mdi-archive-check">
-            Arquivados (Atendidos)
+          <v-btn
+            value="arquivados"
+            :icon="mobile ? 'mdi-archive-check' : undefined"
+            :prepend-icon="!mobile ? 'mdi-archive-check' : undefined"
+          >
+            <template v-if="!mobile">Arquivados (Atendidos)</template>
           </v-btn>
         </v-btn-toggle>
       </div>

@@ -42,7 +42,7 @@
           ></v-list-item>
           <v-list-item
             prepend-icon="mdi-account-group"
-            title="Servidores e Cidades"
+            title="Pedidos"
             to="/admin/servidores"
             rounded="lg"
             class="mb-1"
