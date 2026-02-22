@@ -173,4 +173,54 @@ router.get('/me', autenticar, async (req, res) => {
   }
 });
 
+// PUT /api/auth/me
+router.put('/me', autenticar, [
+  body('nome').trim().notEmpty().withMessage('Nome é obrigatório.').isLength({ min: 3, max: 150 }),
+  body('data_ingresso').isISO8601().withMessage('Data de ingresso inválida.'),
+  body('cidade_lotacao_id').isInt({ min: 1 }).withMessage('Cidade de lotação é obrigatória.'),
+  body('data_posse_cargo').optional({ checkFalsy: true }).isISO8601().withMessage('Data de posse inválida.'),
+  body('data_lotacao_atual').optional({ checkFalsy: true }).isISO8601().withMessage('Data de lotação inválida.')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const {
+      nome, data_ingresso, cidade_lotacao_id,
+      data_posse_cargo, data_lotacao_atual
+    } = req.body;
+
+    const servidor = await Servidor.findByPk(req.usuario.id);
+    if (!servidor) {
+      return res.status(404).json({ error: 'Usuário não encontrado.' });
+    }
+
+    const cidade = await Cidade.findByPk(cidade_lotacao_id);
+    if (!cidade) {
+      return res.status(400).json({ error: 'Cidade de lotação não encontrada.' });
+    }
+
+    const dataInicio = data_posse_cargo ? new Date(data_posse_cargo) : new Date(data_ingresso);
+    const hoje = new Date();
+    const diffTime = Math.abs(hoje - dataInicio);
+    const tempo_servico_total_dias = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    await servidor.update({
+      nome: nome.trim(),
+      data_ingresso,
+      data_posse_cargo: data_posse_cargo || null,
+      data_lotacao_atual: data_lotacao_atual || null,
+      tempo_servico_total_dias: tempo_servico_total_dias || 0,
+      cidade_lotacao_id
+    });
+
+    res.json({ mensagem: 'Perfil atualizado com sucesso.' });
+  } catch (err) {
+    console.error('Erro ao atualizar perfil:', err);
+    res.status(500).json({ error: 'Erro interno.' });
+  }
+});
+
 module.exports = router;

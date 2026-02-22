@@ -1,7 +1,7 @@
 <template>
   <v-main class="login-bg d-flex align-center justify-center">
     <v-container class="d-flex justify-center">
-      <v-card class="login-card pa-8" width="440" rounded="xl" elevation="0">
+      <v-card class="login-card pa-8 border" width="440" rounded="xl" elevation="4">
         <div class="text-center mb-6">
           <v-icon icon="mdi-shield-account" size="56" color="blue-lighten-3" class="mb-3"></v-icon>
           <h1 class="login-title text-h5 text-white">Sistema de Remoção</h1>
@@ -69,6 +69,7 @@
                 density="comfortable"
                 :rules="[rules.required]"
                 class="mb-2"
+                hide-details
               ></v-text-field>
 
               <v-text-field
@@ -78,7 +79,8 @@
                 variant="outlined"
                 density="comfortable"
                 :rules="[rules.required, rules.minLen3]"
-                class="mb-2"
+                class="mb-2 mt-4"
+                hide-details
               ></v-text-field>
 
               <v-text-field
@@ -89,7 +91,8 @@
                 variant="outlined"
                 density="comfortable"
                 :rules="[rules.required, rules.minLen6]"
-                class="mb-2"
+                class="mb-2 mt-4"
+                hide-details
               ></v-text-field>
 
               <v-text-field
@@ -100,32 +103,30 @@
                 variant="outlined"
                 density="comfortable"
                 :rules="[rules.required]"
-                class="mb-2"
+                class="mb-2 mt-4"
+                hide-details
               ></v-text-field>
 
               <v-text-field
                 v-model="regForm.data_posse_cargo"
-                label="Data de Posse no Cargo"
+                label="Data da posse no cargo atual"
                 prepend-inner-icon="mdi-calendar-check"
                 type="date"
                 variant="outlined"
                 density="comfortable"
-                class="mb-1"
-                hint="Para desempate na regra aprimorada"
-                persistent-hint
+                class="mt-4"
+                hide-details
               ></v-text-field>
 
-              <div class="d-flex justify-end mb-3">
-                <v-btn 
-                  variant="text" 
-                  size="small" 
-                  color="blue-lighten-1" 
-                  @click="regForm.data_posse_cargo = regForm.data_ingresso" 
+              <div class="d-flex flex-wrap justify-start mt-1 mb-4 ml-1">
+                <v-checkbox
+                  v-model="chkPosseIngresso"
+                  label="Igual ao Ingresso"
+                  color="blue-lighten-1"
+                  density="compact"
+                  hide-details
                   :disabled="!regForm.data_ingresso"
-                >
-                  <v-icon start icon="mdi-content-copy" size="small"></v-icon>
-                  Igual a Ingresso
-                </v-btn>
+                ></v-checkbox>
               </div>
 
               <v-text-field
@@ -135,30 +136,28 @@
                 type="date"
                 variant="outlined"
                 density="comfortable"
-                class="mb-1"
+                class="mt-2"
+                hide-details
               ></v-text-field>
 
-              <div class="d-flex justify-end mb-3">
-                <v-btn 
-                  variant="text" 
-                  size="small" 
-                  color="blue-lighten-1" 
-                  @click="regForm.data_lotacao_atual = regForm.data_ingresso" 
+              <div class="d-flex flex-wrap justify-start mt-1 mb-4 ml-1">
+                <v-checkbox
+                  v-model="chkLotacaoIngresso"
+                  label="Igual ao Ingresso"
+                  color="blue-lighten-1"
+                  density="compact"
+                  hide-details
+                  class="mr-4"
                   :disabled="!regForm.data_ingresso"
-                >
-                  <v-icon start icon="mdi-content-copy" size="small"></v-icon>
-                  Igual a Ingresso
-                </v-btn>
-                <v-btn 
-                  variant="text" 
-                  size="small" 
-                  color="blue-lighten-1" 
-                  @click="regForm.data_lotacao_atual = regForm.data_posse_cargo" 
+                ></v-checkbox>
+                <v-checkbox
+                  v-model="chkLotacaoPosse"
+                  label="Igual à Posse"
+                  color="blue-lighten-1"
+                  density="compact"
+                  hide-details
                   :disabled="!regForm.data_posse_cargo"
-                >
-                  <v-icon start icon="mdi-content-copy" size="small"></v-icon>
-                  Igual a Posse
-                </v-btn>
+                ></v-checkbox>
               </div>
 
               <v-select
@@ -170,11 +169,12 @@
                 prepend-inner-icon="mdi-map-marker"
                 variant="outlined"
                 density="comfortable"
-                class="mb-2"
+                class="mb-3"
+                hide-details
                 :rules="[rules.required]"
               ></v-select>
 
-              <v-alert v-if="authStore.erro" type="error" variant="tonal" density="compact" class="mb-3">
+              <v-alert v-if="authStore.erro" type="error" variant="tonal" density="compact" class="mb-2 mt-1">
                 {{ authStore.erro }}
               </v-alert>
 
@@ -197,7 +197,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, watch } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useCidadesStore } from '../stores/cidades';
 import { useRouter } from 'vue-router';
@@ -213,11 +213,42 @@ onMounted(() => {
 const tab = ref('login');
 const showPass = ref(false);
 
+const chkPosseIngresso = ref(false);
+const chkLotacaoIngresso = ref(false);
+const chkLotacaoPosse = ref(false);
+
 const loginForm = reactive({ matricula: '', senha: '' });
 const regForm = reactive({
   matricula: '', nome: '', senha: '',
   data_ingresso: '', cidade_lotacao_id: null,
   data_posse_cargo: '', data_lotacao_atual: '', tempo_servico_total_dias: ''
+});
+
+watch(() => regForm.data_ingresso, (val) => {
+  if (chkPosseIngresso.value) regForm.data_posse_cargo = val;
+  if (chkLotacaoIngresso.value) regForm.data_lotacao_atual = val;
+});
+watch(() => chkPosseIngresso.value, (val) => {
+  if (val && regForm.data_ingresso) regForm.data_posse_cargo = regForm.data_ingresso;
+});
+watch(() => chkLotacaoIngresso.value, (val) => {
+  if (val && regForm.data_ingresso) {
+    regForm.data_lotacao_atual = regForm.data_ingresso;
+    chkLotacaoPosse.value = false;
+  }
+});
+watch(() => chkLotacaoPosse.value, (val) => {
+  if (val && regForm.data_posse_cargo) {
+    regForm.data_lotacao_atual = regForm.data_posse_cargo;
+    chkLotacaoIngresso.value = false;
+  }
+});
+watch(() => regForm.data_posse_cargo, (val) => {
+  if (val !== regForm.data_ingresso) chkPosseIngresso.value = false;
+});
+watch(() => regForm.data_lotacao_atual, (val) => {
+  if (val !== regForm.data_ingresso) chkLotacaoIngresso.value = false;
+  if (val !== regForm.data_posse_cargo) chkLotacaoPosse.value = false;
 });
 
 const rules = {

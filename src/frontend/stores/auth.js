@@ -42,9 +42,24 @@ export const useAuthStore = defineStore('auth', {
                 }
 
                 this.token = data.token;
-                this.usuario = data.usuario;
                 localStorage.setItem('token', data.token);
-                localStorage.setItem('usuario', JSON.stringify(data.usuario));
+
+                try {
+                    const reqMe = await fetch('/api/auth/me', { headers: this.authHeaders() });
+                    if (reqMe.ok) {
+                        const meData = await reqMe.json();
+                        this.usuario = meData;
+                        localStorage.setItem('usuario', JSON.stringify(meData));
+                    } else {
+                        // Fallback temporário
+                        this.usuario = data.usuario;
+                        localStorage.setItem('usuario', JSON.stringify(data.usuario));
+                    }
+                } catch (e) {
+                    this.usuario = data.usuario;
+                    localStorage.setItem('usuario', JSON.stringify(data.usuario));
+                }
+
                 return true;
             } catch (err) {
                 this.erro = err.message;
@@ -73,6 +88,38 @@ export const useAuthStore = defineStore('auth', {
                 this.usuario = data.usuario;
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('usuario', JSON.stringify(data.usuario));
+                return true;
+            } catch (err) {
+                this.erro = err.message;
+                return false;
+            } finally {
+                this.carregando = false;
+            }
+        },
+
+        async atualizarPerfil(dados) {
+            this.carregando = true;
+            this.erro = null;
+            try {
+                const res = await fetch('/api/auth/me', {
+                    method: 'PUT',
+                    headers: this.authHeaders(),
+                    body: JSON.stringify(dados)
+                });
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.error || data.errors?.[0]?.msg || 'Erro ao atualizar perfil.');
+                }
+
+                // Dispara a re-checagem de fetch do perfil que configuramos anteriormente no login
+                const reqMe = await fetch('/api/auth/me', { headers: this.authHeaders() });
+                if (reqMe.ok) {
+                    const meData = await reqMe.json();
+                    this.usuario = meData;
+                    localStorage.setItem('usuario', JSON.stringify(meData));
+                }
+
                 return true;
             } catch (err) {
                 this.erro = err.message;

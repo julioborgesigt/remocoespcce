@@ -232,8 +232,6 @@ router.put('/:id/pedido', autenticar, apenasAdmin, [
   }
 });
 
-module.exports = router;
-
 // PUT /api/servidores/:id — Admin editar dados do servidor (incluindo datas de antiguidade)
 router.put('/:id', autenticar, apenasAdmin, async (req, res) => {
   try {
@@ -277,3 +275,5 @@ router.put('/:id', autenticar, apenasAdmin, async (req, res) => {
     res.status(500).json({ error: 'Erro ao atualizar dados do servidor.' });
   }
 });
+
+module.exports = router;
