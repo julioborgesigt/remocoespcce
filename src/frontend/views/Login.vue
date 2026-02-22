@@ -110,10 +110,23 @@
                 type="date"
                 variant="outlined"
                 density="comfortable"
-                class="mb-2"
+                class="mb-1"
                 hint="Para desempate na regra aprimorada"
                 persistent-hint
               ></v-text-field>
+
+              <div class="d-flex justify-end mb-3">
+                <v-btn 
+                  variant="text" 
+                  size="small" 
+                  color="blue-lighten-1" 
+                  @click="regForm.data_posse_cargo = regForm.data_ingresso" 
+                  :disabled="!regForm.data_ingresso"
+                >
+                  <v-icon start icon="mdi-content-copy" size="small"></v-icon>
+                  Igual a Ingresso
+                </v-btn>
+              </div>
 
               <v-text-field
                 v-model="regForm.data_lotacao_atual"
@@ -122,8 +135,31 @@
                 type="date"
                 variant="outlined"
                 density="comfortable"
-                class="mb-2"
+                class="mb-1"
               ></v-text-field>
+
+              <div class="d-flex justify-end mb-3">
+                <v-btn 
+                  variant="text" 
+                  size="small" 
+                  color="blue-lighten-1" 
+                  @click="regForm.data_lotacao_atual = regForm.data_ingresso" 
+                  :disabled="!regForm.data_ingresso"
+                >
+                  <v-icon start icon="mdi-content-copy" size="small"></v-icon>
+                  Igual a Ingresso
+                </v-btn>
+                <v-btn 
+                  variant="text" 
+                  size="small" 
+                  color="blue-lighten-1" 
+                  @click="regForm.data_lotacao_atual = regForm.data_posse_cargo" 
+                  :disabled="!regForm.data_posse_cargo"
+                >
+                  <v-icon start icon="mdi-content-copy" size="small"></v-icon>
+                  Igual a Posse
+                </v-btn>
+              </div>
 
               <v-select
                 v-model="regForm.cidade_lotacao_id"
