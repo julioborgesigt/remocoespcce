@@ -122,7 +122,7 @@ app.use('/api/testes', require('./src/routes/testes'));
 app.use('/api/ranking', require('./src/routes/ranking'));
 
 // ── SPA fallback ───────────────────────────────────────────
-app.get('*', (_req, res) => {
+app.get(/.*/, (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'dist', 'index.html'));
 });
 
