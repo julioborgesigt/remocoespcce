@@ -58,8 +58,8 @@ router.post('/login', [
   }
 });
 
-// POST /api/auth/registrar (SOMENTE ADMIN)
-router.post('/registrar', autenticar, apenasAdmin, [
+// POST /api/auth/registrar (ABERTO PARA NOVOS USUÁRIOS)
+router.post('/registrar', [
   body('matricula').trim().notEmpty().withMessage('Matrícula é obrigatória.')
     .isLength({ max: 30 }).withMessage('Matrícula: máx 30 caracteres.'),
   body('nome').trim().notEmpty().withMessage('Nome é obrigatório.')

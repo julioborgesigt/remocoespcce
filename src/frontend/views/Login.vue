@@ -125,17 +125,17 @@
                 class="mb-2"
               ></v-text-field>
 
-              <!-- Cidade disabled for now until cidateStore is ported -->
               <v-select
                 v-model="regForm.cidade_lotacao_id"
-                :items="[]"
+                :items="cidadesStore.lista"
                 item-title="nome"
                 item-value="id"
-                label="Cidade de Lotação (Desabilitado temporariamente)"
+                label="Cidade de Lotação"
                 prepend-inner-icon="mdi-map-marker"
                 variant="outlined"
                 density="comfortable"
                 class="mb-2"
+                :rules="[rules.required]"
               ></v-select>
 
               <v-alert v-if="authStore.erro" type="error" variant="tonal" density="compact" class="mb-3">
@@ -161,12 +161,18 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
+import { useCidadesStore } from '../stores/cidades';
 import { useRouter } from 'vue-router';
 
 const authStore = useAuthStore();
+const cidadesStore = useCidadesStore();
 const router = useRouter();
+
+onMounted(() => {
+  cidadesStore.carregar();
+});
 
 const tab = ref('login');
 const showPass = ref(false);
