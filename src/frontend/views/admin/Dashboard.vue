@@ -18,17 +18,24 @@
               <span v-else class="text-success ml-2 font-weight-bold">(Aberto)</span>
             </div>
           </div>
-          <div class="d-flex flex-column flex-sm-row w-100 w-sm-auto align-stretch align-sm-center" style="gap: 10px">
-            <input type="datetime-local" class="custom-date-input" v-model="novaData" />
+          <div class="d-flex flex-column flex-sm-row w-100 w-sm-auto align-stretch align-sm-start mt-4 mt-sm-0" style="gap: 10px">
+            <v-text-field
+                type="datetime-local"
+                v-model="novaData"
+                variant="outlined"
+                density="compact"
+                hide-details
+                style="min-width: 250px"
+            ></v-text-field>
             <v-btn 
                 :block="mobile"
                 color="primary" 
                 variant="flat" 
-                size="small" 
                 :loading="configStore.loading"
                 :disabled="!novaData"
                 @click="atualizarData"
-                class="mt-2 mt-sm-0"
+                class="mt-1 mt-sm-0"
+                height="40"
             >
               Atualizar Prazo
             </v-btn>

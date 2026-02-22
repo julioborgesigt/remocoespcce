@@ -356,7 +356,7 @@
         <div class="d-flex justify-end mb-2 w-100">
            <v-menu>
               <template v-slot:activator="{ props }">
-                <v-btn :block="mobile" color="secondary" variant="text" size="small" prepend-icon="mdi-export" v-bind="props">
+                <v-btn :block="mobile" color="secondary" variant="tonal" size="small" prepend-icon="mdi-export" v-bind="props">
                   Exportar Resultados
                 </v-btn>
               </template>

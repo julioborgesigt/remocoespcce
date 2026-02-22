@@ -3,14 +3,14 @@
     <!-- App Bar -->
     <v-app-bar elevation="0" border="b">
       <v-app-bar-nav-icon @click="drawer = !drawer" class="d-lg-none"></v-app-bar-nav-icon>
-      <v-app-bar-title class="text-body-1 font-weight-bold">
+      <v-app-bar-title class="text-body-1 font-weight-bold d-none d-sm-block">
         <v-icon icon="mdi-shield-account" color="primary" class="mr-2"></v-icon>
         Sistema de Remoção
       </v-app-bar-title>
       <template v-slot:append>
         <v-chip color="primary" variant="tonal" size="small" class="mr-3">
           <v-icon start icon="mdi-account"></v-icon>
-          {{ authStore.nomeUsuario }}
+          <span class="text-truncate" style="max-width: 120px;">{{ authStore.nomeUsuario }}</span>
         </v-chip>
         <v-btn
           :icon="temaEscuro ? 'mdi-weather-sunny' : 'mdi-weather-night'"
