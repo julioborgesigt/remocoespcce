@@ -8,8 +8,25 @@ export default defineConfig({
     build: {
         outDir: '../../public/dist', // Onde o Vite vai colocar os arquivos compilados (em relação à pasta src/frontend)
         emptyOutDir: true,
+        chunkSizeWarningLimit: 1000,
         rollupOptions: {
-            input: path.resolve(__dirname, 'src/frontend/index.html') // Nosso novo entry point
+            input: path.resolve(__dirname, 'src/frontend/index.html'), // Nosso novo entry point
+            output: {
+                manualChunks(id) {
+                    if (id.includes('node_modules')) {
+                        if (id.includes('vuetify') || id.includes('@mdi')) {
+                            return 'vendor-vuetify';
+                        }
+                        if (id.includes('vue') || id.includes('pinia') || id.includes('vue-router')) {
+                            return 'vendor-vue-core';
+                        }
+                        if (id.includes('jspdf') || id.includes('html2canvas') || id.includes('xlsx') || id.includes('dompurify')) {
+                            return 'vendor-export-tools';
+                        }
+                        return 'vendor-others';
+                    }
+                }
+            }
         }
     },
     server: {
