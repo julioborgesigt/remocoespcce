@@ -44,7 +44,7 @@
             rounded="lg"
             hide-details
             class="w-100"
-            style="max-width: sm ? '100%' : '400px'"
+            :style="{ maxWidth: mobile ? '100%' : '400px' }"
         ></v-text-field>
 
         <v-menu>

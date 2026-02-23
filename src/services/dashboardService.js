@@ -55,7 +55,7 @@ async function getDashboardData() {
 
     // --- CÁLCULO DETALHADO POR CIDADE ---
     const todosPedidosPendentes = await PedidoRemocao.findAll({
-        where: { status: 'pendente' },
+        where: { status: ['pendente', 'atendido', 'nao_atendido'] },
         attributes: ['opcao1_cidade_id', 'opcao2_cidade_id', 'opcao3_cidade_id', 'motivo_prioridade']
     });
 

@@ -9,7 +9,7 @@ async function getEstatisticasConcorrencia(usuarioId) {
     const cidades = await Cidade.findAll({ order: [['nome', 'ASC']] });
 
     const pedidos = await PedidoRemocao.findAll({
-        where: { status: 'pendente' },
+        where: { status: ['pendente', 'atendido', 'nao_atendido'] },
         include: [{
             model: Servidor,
             as: 'servidor',
@@ -69,7 +69,7 @@ async function getListaCidadesCompleta() {
     });
 
     const pedidosPendentes = await PedidoRemocao.findAll({
-        where: { status: 'pendente' },
+        where: { status: ['pendente', 'atendido', 'nao_atendido'] },
         attributes: ['opcao1_cidade_id', 'opcao2_cidade_id', 'opcao3_cidade_id']
     });
 

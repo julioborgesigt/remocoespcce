@@ -713,9 +713,7 @@ const AdminDistribuicao = {
         const authStore = useAuthStore();
         const res = await fetch('/api/processamento/fechar-temporada', {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${authStore.token}`
-          }
+          headers: authStore.authHeaders()
         });
 
         if (!res.ok) {

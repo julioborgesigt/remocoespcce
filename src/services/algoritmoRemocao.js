@@ -185,7 +185,7 @@ async function calcularRankingSimulado(servidorId, regra = 'aprimorada', simulac
   // Busca todos os pedidos pendentes de OUTROS servidores
   const pedidosOutros = await PedidoRemocao.findAll({
     where: {
-      status: 'pendente',
+      status: ['pendente', 'atendido', 'nao_atendido'],
     },
     include: [{
       model: Servidor,
@@ -260,7 +260,7 @@ async function processarRemocao(regra = 'antiguidade', novosServidores = 0) {
     // ── 1. Carregar dados ────────────────────────────────────
     const cidades = await Cidade.findAll({ transaction });
     const pedidos = await PedidoRemocao.findAll({
-      where: { status: 'pendente' },
+      where: { status: ['pendente', 'atendido', 'nao_atendido'] },
       include: [{
         model: Servidor,
         as: 'servidor',

@@ -44,7 +44,7 @@
           <h1 class="text-h5 font-weight-bold mb-1">Distribuição</h1>
           <p class="text-body-2 text-medium-emphasis">Gerencie as cidades e vagas disponíveis</p>
         </div>
-        <div class="d-flex flex-column flex-sm-row ga-2 w-100" style="max-width: sm ? '100%' : 'auto'">
+        <div class="d-flex flex-column flex-sm-row ga-2 w-100" :style="{ maxWidth: mobile ? '100%' : 'auto' }">
             <v-menu>
               <template v-slot:activator="{ props }">
                 <v-btn :block="mobile" color="secondary" variant="tonal" prepend-icon="mdi-export" v-bind="props">
@@ -721,9 +721,7 @@ const cidadesStore = useCidadesStore();
         const authStore = useAuthStore();
         const res = await fetch('/api/processamento/fechar-temporada', {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${authStore.token}`
-          }
+          headers: authStore.authHeaders()
         });
 
         if (!res.ok) {

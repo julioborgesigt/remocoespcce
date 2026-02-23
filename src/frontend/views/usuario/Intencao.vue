@@ -258,7 +258,7 @@
                   </div>
                   <div>
                     <v-icon icon="mdi-account-group" size="14" class="mr-1"></v-icon>
-                    <strong>{{ cidade.totalOutros !== undefined ? cidade.totalOutros : cidade.totalPedidos }}</strong> interessados
+                    <strong>{{ cidade.totalPedidosCalculado !== undefined ? cidade.totalPedidosCalculado : cidade.totalPedidos }}</strong> interessados
                   </div>
                   <div v-if="cidade.minhaPosicao" class="text-primary font-weight-bold">
                     <v-icon icon="mdi-trophy" size="14" class="mr-1"></v-icon>
@@ -267,7 +267,7 @@
                 </div>
                 <v-progress-linear
                   class="mt-2"
-                  :model-value="cidade.vagasIniciais > 0 ? Math.min(100, (cidade.totalPedidos / cidade.vagasIniciais) * 100) : 100"
+                  :model-value="cidade.vagasIniciais > 0 ? Math.min(100, ((cidade.totalPedidosCalculado !== undefined ? cidade.totalPedidosCalculado : cidade.totalPedidos) / cidade.vagasIniciais) * 100) : 100"
                   :color="corConcorrencia(cidade.id)"
                   height="4"
                   rounded
@@ -348,21 +348,37 @@ const cidadesSelecionadasConcorrencia = computed(() => {
 
     if (ids.length === 0) {
         lista = cidadesStore.concorrencia.filter(
-            c => c.id !== authStore.usuario?.cidadeLotacao?.id
+            c => c.id != authStore.usuario?.cidadeLotacao?.id
         );
     } else {
         lista = ids
-            .map(id => cidadesStore.concorrencia.find(c => c.id === id))
+            .map(id => cidadesStore.concorrencia.find(c => c.id == id))
             .filter(Boolean);
     }
 
     return lista.map(c => {
-        const rank = cidadesStore.ranking.find(r => r.cidadeId === c.id);
+        const rank = cidadesStore.ranking.find(r => r.cidadeId == c.id);
+        
+        const outrosCount = rank ? rank.totalOutros : 0;
+        const outros1a = rank ? rank.como1a : 0;
+        const outros2a = rank ? rank.como2a : 0;
+        const outros3a = rank ? rank.como3a : 0;
+
+        const euSou1a = formData.opcao1 == c.id;
+        const euSou2a = formData.opcao2 == c.id;
+        const euSou3a = formData.opcao3 == c.id;
+        const euEstouInteressado = euSou1a || euSou2a || euSou3a;
+
+        const calcTotal = rank ? outrosCount + (euEstouInteressado ? 1 : 0) : c.totalPedidos;
+
         return {
             ...c,
             minhaPosicao: rank ? rank.posicao : '-',
             totalNoRanking: rank ? rank.totalConcorrentes : '-',
-            totalOutros: rank ? rank.totalOutros : '-'
+            totalPedidosCalculado: calcTotal,
+            como1a: rank ? outros1a + (euSou1a ? 1 : 0) : c.como1a,
+            como2a: rank ? outros2a + (euSou2a ? 1 : 0) : c.como2a,
+            como3a: rank ? outros3a + (euSou3a ? 1 : 0) : c.como3a
         };
     }).sort((a, b) => {
         const getScore = (item) => {
@@ -378,11 +394,11 @@ const cidadesSelecionadasConcorrencia = computed(() => {
 });
 
 function getConcorrencia(cidadeId) {
-    return cidadesStore.concorrencia.find(c => c.id === cidadeId);
+    return cidadesStore.concorrencia.find(c => c.id == cidadeId);
 }
 
 function corConcorrencia(cidadeId) {
-    const c = cidadesSelecionadasConcorrencia.value.find(c => c.id === cidadeId) || getConcorrencia(cidadeId);
+    const c = cidadesSelecionadasConcorrencia.value.find(c => c.id == cidadeId) || getConcorrencia(cidadeId);
     if (!c) return 'grey';
     if (c.vagasIniciais === 0) return 'grey';
 
@@ -392,7 +408,14 @@ function corConcorrencia(cidadeId) {
         return 'error';
     }
 
-    const total = c.totalPedidos || 0;
+    const total = c.totalPedidosCalculado !== undefined ? c.totalPedidosCalculado : (() => {
+        const rank = cidadesStore.ranking.find(r => r.cidadeId == cidadeId);
+        const euSou1a = formData.opcao1 == cidadeId;
+        const euSou2a = formData.opcao2 == cidadeId;
+        const euSou3a = formData.opcao3 == cidadeId;
+        return rank ? (rank.totalOutros + (euSou1a || euSou2a || euSou3a ? 1 : 0)) : c.totalPedidos;
+    })();
+
     if (total === 0) return 'success';
     const ratio = total / c.vagasIniciais;
     if (ratio <= 1) return 'success';
@@ -403,11 +426,23 @@ function corConcorrencia(cidadeId) {
 function labelVagas(cidadeId) {
     const c = getConcorrencia(cidadeId);
     if (!c) return '...';
-    return c.vagasIniciais + ' vaga(s) · ' + c.totalPedidos + ' pedido(s)';
+    
+    const computedC = cidadesSelecionadasConcorrencia.value.find(cc => cc.id == cidadeId);
+    if (computedC && computedC.totalPedidosCalculado !== undefined) {
+        return c.vagasIniciais + ' vaga(s) · ' + computedC.totalPedidosCalculado + ' pedido(s)';
+    }
+
+    const rank = cidadesStore.ranking.find(r => r.cidadeId == cidadeId);
+    const euSou1a = formData.opcao1 == cidadeId;
+    const euSou2a = formData.opcao2 == cidadeId;
+    const euSou3a = formData.opcao3 == cidadeId;
+    const total = rank ? (rank.totalOutros + (euSou1a || euSou2a || euSou3a ? 1 : 0)) : c.totalPedidos;
+
+    return c.vagasIniciais + ' vaga(s) · ' + total + ' pedido(s)';
 }
 
 function labelChance(cidadeId) {
-    const c = cidadesSelecionadasConcorrencia.value.find(c => c.id === cidadeId) || getConcorrencia(cidadeId);
+    const c = cidadesSelecionadasConcorrencia.value.find(c => c.id == cidadeId) || getConcorrencia(cidadeId);
     if (!c) return '...';
     if (c.vagasIniciais === 0) return 'Sem vagas';
 
@@ -417,7 +452,14 @@ function labelChance(cidadeId) {
         return 'Improvável';
     }
 
-    const total = c.totalPedidos || 0;
+    const total = c.totalPedidosCalculado !== undefined ? c.totalPedidosCalculado : (() => {
+        const rank = cidadesStore.ranking.find(r => r.cidadeId == cidadeId);
+        const euSou1a = formData.opcao1 == cidadeId;
+        const euSou2a = formData.opcao2 == cidadeId;
+        const euSou3a = formData.opcao3 == cidadeId;
+        return rank ? (rank.totalOutros + (euSou1a || euSou2a || euSou3a ? 1 : 0)) : c.totalPedidos;
+    })();
+
     const ratio = total / c.vagasIniciais;
     if (ratio <= 1) return 'Provável';
     if (ratio <= 2) return 'Competitivo';
@@ -425,7 +467,7 @@ function labelChance(cidadeId) {
 }
 
 function labelRanking(cidadeId) {
-    const rank = cidadesStore.ranking.find(r => r.cidadeId === cidadeId);
+    const rank = cidadesStore.ranking.find(r => r.cidadeId == cidadeId);
     if (!rank) return '';
     return `#${rank.posicao}`;
 }
